@@ -33,17 +33,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Check for persisted auth state on mount
   useEffect(() => {
+<<<<<<< HEAD
     const token = localStorage.getItem("token");
     if (token) {
       // Verify token is still valid by fetching user
       fetchMe(token);
     } else {
       setLoading(false);
+=======
+    console.log("[AuthContext] Initializing - checking for persisted token");
+    const token = localStorage.getItem("token");
+    if (token) {
+      console.log("[AuthContext] Token found in localStorage, verifying with backend");
+      // Verify token is still valid by fetching user
+      fetchMe(token);
+    } else {
+      console.log("[AuthContext] No token found, setting unauthenticated state");
+      setLoading(false);
+      // Ensure unauthenticated state is set
+      setIsAuthenticated(false);
+      setUser(null);
+>>>>>>> 86d481d (Finalized Project)
     }
   }, []);
 
   const fetchMe = async (token: string) => {
     try {
+<<<<<<< HEAD
+=======
+      console.log("[AuthContext] Verifying token with /auth/me endpoint");
+>>>>>>> 86d481d (Finalized Project)
       const response = await fetch(`${API_URL}/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -52,18 +71,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (response.ok) {
         const data = await response.json();
+<<<<<<< HEAD
+=======
+        console.log("[AuthContext] Token verified, user authenticated:", data.user.username);
+>>>>>>> 86d481d (Finalized Project)
         const avatarUrl =
           data.user.avatar_url ||
           `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.username}`;
         setIsAuthenticated(true);
         setUser({ ...data.user, avatar: avatarUrl });
       } else {
+<<<<<<< HEAD
         // Token is invalid, clear it
         localStorage.removeItem("token");
       }
     } catch (error) {
       console.error("Failed to verify token:", error);
       localStorage.removeItem("token");
+=======
+        // Token is invalid, clear it and set unauthenticated state
+        console.log(`[AuthContext] Token verification failed with status ${response.status}, clearing auth state`);
+        localStorage.removeItem("token");
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("[AuthContext] Failed to verify token:", error);
+      localStorage.removeItem("token");
+      setIsAuthenticated(false);
+      setUser(null);
+>>>>>>> 86d481d (Finalized Project)
     } finally {
       setLoading(false);
     }

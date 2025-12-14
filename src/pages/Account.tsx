@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useState, useRef, useEffect } from "react";
+=======
+import { useState, useRef, useEffect, useCallback } from "react";
+>>>>>>> 86d481d (Finalized Project)
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
@@ -37,7 +41,14 @@ interface FollowingUser {
   username: string;
   display_name: string;
   avatar_url?: string;
+<<<<<<< HEAD
   bio?: string;
+=======
+  avatar?: string;
+  bio?: string;
+  followers?: number;
+  following?: number;
+>>>>>>> 86d481d (Finalized Project)
 }
 
 interface UserPost {
@@ -83,6 +94,17 @@ const Account = ({ useViewSwitching }: AccountProps) => {
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
+<<<<<<< HEAD
+=======
+  const [editingInterests, setEditingInterests] = useState(false);
+  const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
+  const [availableTags, setAvailableTags] = useState<string[]>([
+    "Travel", "Fitness", "Cooking", "Gaming",
+    "Reading", "Photography", "Fashion", "Nature",
+    "Technology", "Art", "Wellness", "Music"
+  ]);
+  const [savingInterests, setSavingInterests] = useState(false);
+>>>>>>> 86d481d (Finalized Project)
   const [editDisplayName, setEditDisplayName] = useState(
     user?.displayName || ""
   );
@@ -114,6 +136,13 @@ const Account = ({ useViewSwitching }: AccountProps) => {
           setProfile(data.user);
           setEditDisplayName(data.user.display_name || "");
           setEditBio(data.user.bio || "");
+<<<<<<< HEAD
+=======
+          // Update avatar if available
+          if (data.user.avatar_url) {
+            setUserAvatar(data.user.avatar_url);
+          }
+>>>>>>> 86d481d (Finalized Project)
         }
       }
     } catch (error) {
@@ -154,6 +183,7 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     }
   }, [user?.avatar]);
 
+<<<<<<< HEAD
   // Fetch following users
   useEffect(() => {
     const fetchFollowing = async () => {
@@ -186,6 +216,83 @@ const Account = ({ useViewSwitching }: AccountProps) => {
       fetchFollowing();
     }
   }, [activeTab, user?.username]);
+=======
+  // Fetch following list
+  const fetchFollowing = useCallback(async () => {
+    if (activeTab !== "following") return;
+    
+    // Only fetch if user is loaded
+    if (!user?.username) {
+      console.log("[Account] No user username available yet");
+      setLoadingFollowing(false);
+      return;
+    }
+
+    setLoadingFollowing(true);
+    try {
+      const token = localStorage.getItem("token");
+      console.log(`[Account] Fetching following list for user: ${user.username}`);
+
+      const response = await apiCallWithAuth(
+        `/user/following`,
+        {
+          method: "GET",
+        },
+        token
+      );
+
+      console.log("[Account] Following API response status:", response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("[Account] Following data received:", data);
+        setFollowingUsers(data.following || []);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("[Account] API error response:", response.status, errorData);
+        setFollowingUsers([]);
+      }
+    } catch (error) {
+      console.error("[Account] Error fetching following:", error);
+      setFollowingUsers([]);
+    } finally {
+      setLoadingFollowing(false);
+    }
+  }, [activeTab, user?.username]);
+
+  // Load following list when tab becomes active
+  useEffect(() => {
+    if (activeTab === "following") {
+      fetchFollowing();
+    }
+  }, [activeTab, fetchFollowing]);
+
+  // Listen for follow status changes from other components
+  useEffect(() => {
+    const handleFollowChange = () => {
+      console.log("[Account] Follow status changed detected, refetching following list...");
+      if (activeTab === "following") {
+        fetchFollowing();
+      }
+    };
+
+    window.addEventListener("followStatusChanged", handleFollowChange);
+    return () => {
+      window.removeEventListener("followStatusChanged", handleFollowChange);
+    };
+  }, [activeTab, fetchFollowing]);
+
+  // Auto-refresh following list when user navigates back to Account page
+  useEffect(() => {
+    if (activeTab === "following" && user?.username && followingUsers.length === 0 && !loadingFollowing) {
+      // Refetch after a short delay to ensure backend is updated
+      const timer = setTimeout(() => {
+        fetchFollowing();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, fetchFollowing]);
+>>>>>>> 86d481d (Finalized Project)
 
   // Fetch user tags
   useEffect(() => {
@@ -283,6 +390,11 @@ const Account = ({ useViewSwitching }: AccountProps) => {
       if (updateUser) {
         updateUser({ ...user!, avatar: data.avatar_url });
       }
+<<<<<<< HEAD
+=======
+      // Refetch profile to ensure avatar is persisted
+      await fetchProfileStats();
+>>>>>>> 86d481d (Finalized Project)
       toast.success("Avatar updated successfully!");
     } catch (error) {
       console.error("Avatar upload error:", error);
@@ -297,6 +409,57 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     }
   };
 
+<<<<<<< HEAD
+=======
+  const handleEditInterestsOpen = () => {
+    setSelectedInterests(new Set(userTags));
+    setEditingInterests(true);
+  };
+
+  const toggleInterest = (tag: string) => {
+    const newInterests = new Set(selectedInterests);
+    if (newInterests.has(tag)) {
+      newInterests.delete(tag);
+    } else {
+      newInterests.add(tag);
+    }
+    setSelectedInterests(newInterests);
+  };
+
+  const handleSaveInterests = async () => {
+    setSavingInterests(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiCallWithAuth(
+        `/user/profile`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            interests: Array.from(selectedInterests),
+          }),
+        },
+        token
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to save interests");
+      }
+
+      const data = await response.json();
+      setUserTags(Array.from(selectedInterests));
+      setEditingInterests(false);
+      toast.success("Interests updated successfully!");
+    } catch (error) {
+      console.error("Save interests error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save interests"
+      );
+    } finally {
+      setSavingInterests(false);
+    }
+  };
+
+>>>>>>> 86d481d (Finalized Project)
   const handleEditProfile = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -333,6 +496,49 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     }
   };
 
+<<<<<<< HEAD
+=======
+  const handleUnfollow = async (targetUsername: string, targetId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await apiCallWithAuth(
+        `/user/${targetUsername}/unfollow`,
+        {
+          method: "POST",
+        },
+        token
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to unfollow");
+      }
+
+      // Remove from the following list immediately
+      setFollowingUsers((prev) => prev.filter((u) => u.id !== targetId));
+      toast.success("Unfollowed successfully");
+      
+      // Dispatch custom event so RightSidebar and other components update instantly
+      window.dispatchEvent(
+        new CustomEvent("followStatusChanged", {
+          detail: { username: targetUsername, isFollowing: false },
+        })
+      );
+      
+      // Refetch the following list to ensure sync
+      setTimeout(() => {
+        fetchFollowing();
+      }, 300);
+    } catch (error) {
+      console.error("Unfollow error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to unfollow user"
+      );
+    }
+  };
+
+>>>>>>> 86d481d (Finalized Project)
   const mockPosts = userPosts.map((post) => ({
     id: post.id.toString(),
     author: {
@@ -353,6 +559,32 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     navigate("/");
   };
 
+<<<<<<< HEAD
+=======
+  const refetchFollowing = async () => {
+    if (!user?.username) return;
+    
+    setLoadingFollowing(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiCallWithAuth(
+        `/user/${user?.username}/following`,
+        { method: "GET" },
+        token
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setFollowingUsers(data.following || []);
+      }
+    } catch (error) {
+      console.error("Error refetching following:", error);
+    } finally {
+      setLoadingFollowing(false);
+    }
+  };
+
+>>>>>>> 86d481d (Finalized Project)
   const content = (
     <div className="max-w-3xl mx-auto">
       {/* Cover Image */}
@@ -381,7 +613,15 @@ const Account = ({ useViewSwitching }: AccountProps) => {
               </AvatarFallback>
             </Avatar>
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+<<<<<<< HEAD
               <Upload className="w-6 h-6 text-white" />
+=======
+              {uploading ? (
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
+              ) : (
+                <Upload className="w-6 h-6 text-white" />
+              )}
+>>>>>>> 86d481d (Finalized Project)
             </div>
           </button>
           <input
@@ -537,6 +777,10 @@ const Account = ({ useViewSwitching }: AccountProps) => {
                         <AvatarImage
                           src={
                             followUser.avatar_url ||
+<<<<<<< HEAD
+=======
+                            followUser.avatar ||
+>>>>>>> 86d481d (Finalized Project)
                             `https://api.dicebear.com/7.x/avataaars/svg?seed=${followUser.username}`
                           }
                           alt={followUser.display_name}
@@ -574,6 +818,10 @@ const Account = ({ useViewSwitching }: AccountProps) => {
                       variant="outline"
                       size="sm"
                       className="gap-2 ml-2 shrink-0"
+<<<<<<< HEAD
+=======
+                      onClick={() => handleUnfollow(followUser.username, followUser.id)}
+>>>>>>> 86d481d (Finalized Project)
                     >
                       <UserMinus className="w-4 h-4" />
                       <span className="hidden sm:inline">Following</span>
@@ -633,7 +881,11 @@ const Account = ({ useViewSwitching }: AccountProps) => {
 
                 <Button
                   variant="outline"
+<<<<<<< HEAD
                   onClick={() => navigate("/onboarding")}
+=======
+                  onClick={handleEditInterestsOpen}
+>>>>>>> 86d481d (Finalized Project)
                   className="mt-8"
                 >
                   Edit Interests
@@ -650,7 +902,11 @@ const Account = ({ useViewSwitching }: AccountProps) => {
                   similar users
                 </p>
                 <Button
+<<<<<<< HEAD
                   onClick={() => navigate("/onboarding")}
+=======
+                  onClick={handleEditInterestsOpen}
+>>>>>>> 86d481d (Finalized Project)
                   className="gap-2"
                 >
                   <Tag className="w-4 h-4" />
@@ -718,6 +974,68 @@ const Account = ({ useViewSwitching }: AccountProps) => {
           </div>
         </div>
       )}
+<<<<<<< HEAD
+=======
+
+      {/* Edit Interests Modal */}
+      {editingInterests && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
+          <div className="bg-background border border-border rounded-xl shadow-xl w-full max-w-2xl mx-4 my-8">
+            <div className="p-6 border-b border-border flex items-center justify-between sticky top-0 bg-background">
+              <h2 className="text-xl font-bold text-foreground">
+                Edit Your Interests
+              </h2>
+              <button
+                onClick={() => setEditingInterests(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <p className="text-muted-foreground">
+                Select the topics and interests you want to follow
+              </p>
+
+              {/* Tags Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {availableTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => toggleInterest(tag)}
+                    className={cn(
+                      "px-4 py-2 rounded-full font-medium transition-all duration-200 text-sm",
+                      selectedInterests.has(tag)
+                        ? "bg-primary text-primary-foreground"
+                        : "border-2 border-muted-foreground text-muted-foreground hover:border-primary hover:text-primary"
+                    )}
+                  >
+                    + {tag}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-2 justify-end pt-4 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditingInterests(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="hero" 
+                  onClick={handleSaveInterests}
+                  disabled={savingInterests}
+                >
+                  {savingInterests ? "Saving..." : "Save Interests"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+>>>>>>> 86d481d (Finalized Project)
     </div>
   );
 

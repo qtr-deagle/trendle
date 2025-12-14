@@ -61,6 +61,7 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const adminLogin = async (email: string, password: string) => {
+<<<<<<< HEAD
     const response = await fetch(`${API_URL}/admin/login`, {
       method: "POST",
       headers: {
@@ -78,6 +79,36 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem("adminToken", data.token);
     setIsAdminAuthenticated(true);
     setAdmin(data.admin);
+=======
+    try {
+      const response = await fetch(`${API_URL}/admin/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Admin login failed";
+        try {
+          const data = await response.json();
+          errorMessage = data.error || errorMessage;
+        } catch (e) {
+          errorMessage = `Login failed with status ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      localStorage.setItem("adminToken", data.token);
+      setIsAdminAuthenticated(true);
+      setAdmin(data.admin);
+    } catch (error) {
+      console.error("Admin login error:", error);
+      throw error;
+    }
+>>>>>>> 86d481d (Finalized Project)
   };
 
   const adminLogout = async () => {

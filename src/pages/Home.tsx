@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
+=======
+import { useState, useEffect, useCallback } from "react";
+>>>>>>> 86d481d (Finalized Project)
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import CreatePostBar from "@/components/post/CreatePostBar";
@@ -26,6 +30,17 @@ interface Post {
   reposts: number;
   createdAt: string;
   isLiked: boolean;
+<<<<<<< HEAD
+=======
+  tags?: string[];
+  matching_followers?: Array<{
+    id: number;
+    username: string;
+    display_name: string;
+    avatar: string;
+    matching_tags: string[];
+  }>;
+>>>>>>> 86d481d (Finalized Project)
 }
 
 interface HomeProps {
@@ -40,22 +55,30 @@ const Home = ({ useViewSwitching }: HomeProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+<<<<<<< HEAD
   useEffect(() => {
     fetchPosts();
   }, [activeTab]);
 
   const fetchPosts = async () => {
+=======
+  const fetchPosts = useCallback(async () => {
+>>>>>>> 86d481d (Finalized Project)
     try {
       setLoading(true);
       setError("");
 
       const token = localStorage.getItem("token");
       if (!token) {
+<<<<<<< HEAD
         // Show default/mock posts if not authenticated
+=======
+>>>>>>> 86d481d (Finalized Project)
         setLoading(false);
         return;
       }
 
+<<<<<<< HEAD
       const response = await apiCallWithAuth(
         "/posts/feed?limit=20&offset=0",
         {
@@ -63,6 +86,22 @@ const Home = ({ useViewSwitching }: HomeProps) => {
         },
         token
       );
+=======
+      let endpoint = "/posts/feed?limit=50&offset=0";
+
+      // Determine which endpoint to use based on active tab
+      if (activeTab === "For you") {
+        endpoint = "/posts/all?limit=50&offset=0"; // Get all posts
+      } else if (activeTab === "Following") {
+        endpoint = "/posts/following?limit=50&offset=0"; // Get only following posts
+      } else if (activeTab === "Your Tags") {
+        endpoint = "/posts/feed?limit=50&offset=0"; // Keep existing for tags
+      }
+
+      console.log(`[Home] Fetching posts for tab: ${activeTab}, endpoint: ${endpoint}`);
+
+      const response = await apiCallWithAuth(endpoint, { method: "GET" }, token);
+>>>>>>> 86d481d (Finalized Project)
 
       if (!response.ok) {
         throw new Error("Failed to fetch posts");
@@ -80,7 +119,32 @@ const Home = ({ useViewSwitching }: HomeProps) => {
     } finally {
       setLoading(false);
     }
+<<<<<<< HEAD
   };
+=======
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [activeTab, fetchPosts]);
+
+  // Listen for follow status changes to refresh all tabs
+  useEffect(() => {
+    const handleFollowChange = () => {
+      console.log("[Home] Follow status changed, refetching posts...");
+      if (activeTab === "For you" || activeTab === "Following" || activeTab === "Your Tags") {
+        setTimeout(() => {
+          fetchPosts();
+        }, 300);
+      }
+    };
+
+    window.addEventListener("followStatusChanged", handleFollowChange);
+    return () => {
+      window.removeEventListener("followStatusChanged", handleFollowChange);
+    };
+  }, [activeTab, fetchPosts]);
+>>>>>>> 86d481d (Finalized Project)
 
   const handleLogout = () => {
     logout();
@@ -126,7 +190,15 @@ const Home = ({ useViewSwitching }: HomeProps) => {
         ) : posts.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
+<<<<<<< HEAD
               No posts yet. Follow users to see their posts!
+=======
+              {activeTab === "Following"
+                ? "No posts yet. Follow users to see their posts!"
+                : activeTab === "Your Tags"
+                ? "No posts with your selected genres yet. Keep exploring to find content you love!"
+                : "No posts yet. Start following users or explore to see posts!"}
+>>>>>>> 86d481d (Finalized Project)
             </p>
           </div>
         ) : (
@@ -141,12 +213,20 @@ const Home = ({ useViewSwitching }: HomeProps) => {
               }}
               content={post.content}
               image={post.image}
+<<<<<<< HEAD
               hashtags={[]}
+=======
+              hashtags={post.tags || []}
+>>>>>>> 86d481d (Finalized Project)
               likes={post.likes}
               comments={post.comments}
               reposts={post.reposts}
               createdAt={post.createdAt}
               isLiked={post.isLiked}
+<<<<<<< HEAD
+=======
+              matchingFollowers={activeTab === "Your Tags" ? post.matching_followers || [] : undefined}
+>>>>>>> 86d481d (Finalized Project)
               onDelete={() => fetchPosts()}
             />
           ))
