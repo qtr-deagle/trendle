@@ -1,6 +1,21 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, AlertCircle, MessageSquare, Users, FileText, Folder, Tag } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  ArrowRight,
+  AlertCircle,
+  MessageSquare,
+  Users,
+  FileText,
+  Folder,
+  Tag,
+} from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -35,13 +50,23 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("/api/admin/dashboard", {
-          headers: { Authorization: `Bearer ${token}` }
+        const token = localStorage.getItem("adminToken");
+        if (!token) {
+          console.error("No admin token found");
+          setLoading(false);
+          return;
+        }
+
+        const apiUrl =
+          import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const response = await fetch(`${apiUrl}/admin/dashboard`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {
           const data = await response.json();
-          setMetrics(data);
+          setMetrics(data.metrics || data);
+        } else {
+          console.error("Failed to fetch metrics:", response.statusText);
         }
       } catch (error) {
         console.error("Failed to fetch metrics:", error);
@@ -57,7 +82,7 @@ const AdminDashboard = () => {
     const labels: Record<string, string> = {
       user_join: "New User",
       post_created: "New Post",
-      report_created: "New Report"
+      report_created: "New Report",
     };
     return labels[type] || type;
   };
@@ -111,7 +136,9 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Pending Reports</p>
-              <p className="text-3xl font-bold">{metrics?.pendingReports || 0}</p>
+              <p className="text-3xl font-bold">
+                {metrics?.pendingReports || 0}
+              </p>
             </div>
             <AlertCircle className="w-8 h-8 text-red-500 opacity-20" />
           </div>
@@ -121,7 +148,9 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Unread Messages</p>
-              <p className="text-3xl font-bold">{metrics?.unreadMessages || 0}</p>
+              <p className="text-3xl font-bold">
+                {metrics?.unreadMessages || 0}
+              </p>
             </div>
             <MessageSquare className="w-8 h-8 text-amber-500 opacity-20" />
           </div>
@@ -151,7 +180,9 @@ const AdminDashboard = () => {
         </Card>
 
         <Card className="p-4 text-center bg-destructive/5">
-          <p className="text-2xl font-bold text-destructive">{metrics?.bannedUsers || 0}</p>
+          <p className="text-2xl font-bold text-destructive">
+            {metrics?.bannedUsers || 0}
+          </p>
           <p className="text-xs text-muted-foreground">Banned Users</p>
         </Card>
       </div>
@@ -185,7 +216,9 @@ const AdminDashboard = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Recent Activities</h2>
-          <Button variant="outline" size="sm">View All</Button>
+          <Button variant="outline" size="sm">
+            View All
+          </Button>
         </div>
         <div className="glass-card overflow-hidden">
           <Table>
@@ -197,14 +230,19 @@ const AdminDashboard = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {metrics?.recentActivities && metrics.recentActivities.length > 0 ? (
+              {metrics?.recentActivities &&
+              metrics.recentActivities.length > 0 ? (
                 metrics.recentActivities.map((activity, index) => (
                   <TableRow key={index} className="border-border">
                     <TableCell className="flex items-center gap-2">
                       {getActivityIcon(activity.type)}
-                      <span className="text-sm">{getActivityTypeLabel(activity.type)}</span>
+                      <span className="text-sm">
+                        {getActivityTypeLabel(activity.type)}
+                      </span>
                     </TableCell>
-                    <TableCell className="text-sm">{activity.username}</TableCell>
+                    <TableCell className="text-sm">
+                      {activity.username}
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(activity.timestamp).toLocaleDateString()}
                     </TableCell>
@@ -212,7 +250,10 @@ const AdminDashboard = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                  <TableCell
+                    colSpan={3}
+                    className="text-center py-4 text-muted-foreground"
+                  >
                     No recent activities
                   </TableCell>
                 </TableRow>
@@ -231,8 +272,12 @@ const AdminDashboard = () => {
               <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-950 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-red-600" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{metrics.pendingReports} Pending Reports</p>
-                  <p className="text-xs text-muted-foreground">Awaiting moderation</p>
+                  <p className="text-sm font-medium">
+                    {metrics.pendingReports} Pending Reports
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Awaiting moderation
+                  </p>
                 </div>
               </div>
             )}
@@ -240,8 +285,12 @@ const AdminDashboard = () => {
               <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg">
                 <MessageSquare className="w-5 h-5 text-amber-600" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{metrics.unreadMessages} Unread Messages</p>
-                  <p className="text-xs text-muted-foreground">User inquiries to review</p>
+                  <p className="text-sm font-medium">
+                    {metrics.unreadMessages} Unread Messages
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    User inquiries to review
+                  </p>
                 </div>
               </div>
             )}
@@ -249,8 +298,12 @@ const AdminDashboard = () => {
               <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
                 <Users className="w-5 h-5 text-purple-600" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{metrics.bannedUsers} Banned Users</p>
-                  <p className="text-xs text-muted-foreground">Inactive accounts</p>
+                  <p className="text-sm font-medium">
+                    {metrics.bannedUsers} Banned Users
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Inactive accounts
+                  </p>
                 </div>
               </div>
             )}
@@ -258,14 +311,23 @@ const AdminDashboard = () => {
               <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-orange-600" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{metrics.flaggedContent} Flagged Content</p>
-                  <p className="text-xs text-muted-foreground">Requires review</p>
+                  <p className="text-sm font-medium">
+                    {metrics.flaggedContent} Flagged Content
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Requires review
+                  </p>
                 </div>
               </div>
             )}
-            {metrics && metrics.pendingReports === 0 && metrics.unreadMessages === 0 && metrics.bannedUsers === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">No active alerts</p>
-            )}
+            {metrics &&
+              metrics.pendingReports === 0 &&
+              metrics.unreadMessages === 0 &&
+              metrics.bannedUsers === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No active alerts
+                </p>
+              )}
           </div>
         </Card>
 
@@ -275,7 +337,9 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <div>
                 <p className="text-sm font-medium">Categories</p>
-                <p className="text-xs text-muted-foreground">{metrics?.totalCategories || 0} active</p>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.totalCategories || 0} active
+                </p>
               </div>
               <Button size="sm" variant="ghost" asChild>
                 <a href="/admin/categories">Manage</a>
@@ -284,7 +348,9 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <div>
                 <p className="text-sm font-medium">Tags</p>
-                <p className="text-xs text-muted-foreground">{metrics?.totalTags || 0} total</p>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.totalTags || 0} total
+                </p>
               </div>
               <Button size="sm" variant="ghost" asChild>
                 <a href="/admin/tags">Manage</a>
@@ -293,7 +359,9 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <div>
                 <p className="text-sm font-medium">Reports</p>
-                <p className="text-xs text-muted-foreground">{metrics?.totalReports || 0} total</p>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.totalReports || 0} total
+                </p>
               </div>
               <Button size="sm" variant="ghost" asChild>
                 <a href="/admin/reports">Review</a>

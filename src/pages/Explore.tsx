@@ -1,34 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { apiCallWithAuth, API_BASE_URL } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
-const trendingCategories = [
-  {
-    id: "trending",
-    name: "Trending",
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400",
-    tags: ["Follow all", "delatarune", "artists on tumblr", "ao3", "my chemical romance", "kpop demon hunters", "memes", "cats on whispr", "fl", "photography", "lgbtq", "pokemon"],
-  },
-  {
-    id: "art",
-    name: "#art",
-    followers: "35.2M",
-    recentPosts: "8,701",
-    image: "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=400",
-    tags: ["Follow all", "my art", "illustration", "photography", "art work", "painting", "famous artwork from famous artists", "animation", "fanart"],
-  },
-  {
-    id: "animals",
-    name: "#animals",
-    followers: "10.8M",
-    recentPosts: "402",
-    image: "https://images.unsplash.com/photo-1474511320723-9a56873571b7?w=400",
-    tags: ["Follow all", "cats", "kittens", "baby animals", "pets", "puppies", "wild animals", "insects"],
-  },
-];
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  icon?: string;
+  color?: string;
+}
+
+interface Hashtag {
+  id: number;
+  name: string;
+  slug: string;
+  usage_count: number;
+  followers: string;
+}
+
+interface SearchResult {
+  users: Array<{
+    id: number;
+    username: string;
+    display_name: string;
+    avatar: string;
+    bio: string;
+  }>;
+  tags: Array<{
+    id: number;
+    name: string;
+    slug: string;
+    usage_count: number;
+  }>;
+  posts: Array<{
+    id: number;
+    author: {
+      id: number;
+      username: string;
+      display_name: string;
+      avatar: string;
+    };
+    content: string;
+    image?: string;
+    createdAt: string;
+  }>;
+}
 
 interface ExploreProps {
   useViewSwitching?: boolean;
@@ -36,18 +59,105 @@ interface ExploreProps {
 
 const Explore = ({ useViewSwitching = false }: ExploreProps) => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [hashtags, setHashtags] = useState<Hashtag[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [categoryLoading, setCategoryLoading] = useState(true);
 
-  const toggleInterest = (interest: string) => {
-    setSelectedInterests((prev) =>
-      prev.includes(interest)
-        ? prev.filter((i) => i !== interest)
-        : [...prev, interest]
-    );
+  useEffect(() => {
+    // Fetch trending data on mount
+    Promise.all([fetchCategories(), fetchTrendingHashtags()]);
+  }, []);
+
+  useEffect(() => {
+    // Debounce search
+    if (searchQuery.trim().length > 0) {
+      const timer = setTimeout(() => {
+        performSearch();
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      setSearchResults(null);
+    }
+  }, [searchQuery]);
+
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiCallWithAuth(
+        "/explore/categories",
+        {
+          method: "GET",
+        },
+        token
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setCategories(data.categories || []);
+      }
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  const fetchTrendingHashtags = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiCallWithAuth(
+        "/explore/trending-hashtags",
+        {
+          method: "GET",
+        },
+        token
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setHashtags(data.hashtags || []);
+      }
+    } catch (err) {
+      console.error("Error fetching hashtags:", err);
+    }
+  };
+
+  const performSearch = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        `/api/search?query=${encodeURIComponent(
+          searchQuery
+        )}&type=all&limit=20`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setSearchResults(data.results);
+      }
+    } catch (err) {
+      console.error("Error searching:", err);
+      toast.error("Search failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = () => {
+    logout();
     navigate("/");
   };
 
@@ -58,84 +168,171 @@ const Explore = ({ useViewSwitching = false }: ExploreProps) => {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
         <Input
           type="text"
-          placeholder="Search..."
+          placeholder="Search users, posts, tags..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-12 h-14 bg-background border-2"
         />
       </div>
 
-      {/* Left sidebar - Interests */}
-      <div className="grid grid-cols-[250px_1fr] gap-8">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">What are you into?</h2>
-          <p className="text-muted-foreground text-sm mb-6">
-            Follow tags & topics you want to see...
-          </p>
-
-          {/* Interest bubbles placeholder */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="w-16 h-10 border-2 border-dashed border-muted rounded-full"
-              />
-            ))}
-          </div>
-
-          <Button variant="hero" size="lg">
-            Next
-          </Button>
-        </div>
-
-        {/* Categories */}
-        <div className="space-y-8">
-          {trendingCategories.map((category) => (
-            <div key={category.id} className="flex gap-6">
-              {/* Category Card */}
-              <div className="relative w-48 h-40 rounded-xl overflow-hidden flex-shrink-0 group cursor-pointer">
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3">
-                  <h3 className="font-bold text-lg">{category.name}</h3>
-                  {category.followers && (
-                    <div className="text-xs text-muted-foreground">
-                      <p>{category.followers} followers</p>
-                      <p>{category.recentPosts} recent posts</p>
-                    </div>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2 text-xs bg-background/50 hover:bg-background/80"
+      {/* Search Results */}
+      {searchResults && (
+        <div className="max-w-3xl mx-auto mb-8 space-y-8">
+          {/* Search Users */}
+          {searchResults.users && searchResults.users.length > 0 && (
+            <div>
+              <h3 className="font-bold text-lg mb-4">Users</h3>
+              <div className="space-y-3">
+                {searchResults.users.map((user) => (
+                  <div
+                    key={user.id}
+                    onClick={() => navigate(`/profile/${user.username}`)}
+                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
                   >
-                    + Follow
-                  </Button>
-                </div>
+                    <img
+                      src={user.avatar}
+                      alt={user.username}
+                      className="w-10 h-10 rounded-full"
+                    />
+                    <div className="flex-1">
+                      <p className="font-semibold">{user.display_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        @{user.username}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
+          )}
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2 content-start">
-                {category.tags.map((tag) => (
+          {/* Search Tags */}
+          {searchResults.tags && searchResults.tags.length > 0 && (
+            <div>
+              <h3 className="font-bold text-lg mb-4">Tags</h3>
+              <div className="flex flex-wrap gap-2">
+                {searchResults.tags.map((tag) => (
                   <Button
-                    key={tag}
-                    variant={selectedInterests.includes(tag) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => toggleInterest(tag)}
+                    key={tag.id}
+                    variant="outline"
+                    onClick={() => navigate(`/explore?tag=${tag.slug}`)}
                     className="rounded-full"
                   >
-                    + {tag}
+                    #{tag.name}
                   </Button>
                 ))}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Search Posts */}
+          {searchResults.posts && searchResults.posts.length > 0 && (
+            <div>
+              <h3 className="font-bold text-lg mb-4">Posts</h3>
+              <div className="space-y-4">
+                {searchResults.posts.map((post) => (
+                  <div
+                    key={post.id}
+                    onClick={() => navigate(`/post/${post.id}`)}
+                    className="p-4 rounded-lg border border-border hover:bg-muted cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-start gap-3 mb-2">
+                      <img
+                        src={post.author.avatar}
+                        alt={post.author.username}
+                        className="w-8 h-8 rounded-full"
+                      />
+                      <div>
+                        <p className="font-semibold text-sm">
+                          {post.author.display_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          @{post.author.username}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-sm line-clamp-2">{post.content}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Trending Section - Hidden when searching */}
+      {!searchResults && (
+        <>
+          <div className="max-w-3xl mx-auto mb-8">
+            <h2 className="text-2xl font-bold mb-6">Trending Now</h2>
+
+            {/* Trending Hashtags */}
+            {hashtags.length > 0 && (
+              <div className="mb-8">
+                <h3 className="font-semibold mb-4">Trending Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {hashtags.slice(0, 10).map((tag) => (
+                    <Button
+                      key={tag.id}
+                      variant="outline"
+                      onClick={() => navigate(`/tag/${tag.slug}/posts`)}
+                      className="rounded-full"
+                    >
+                      #{tag.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Categories */}
+            {categoryLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : categories.length > 0 ? (
+              <div className="mb-8">
+                <h3 className="font-semibold mb-4">Browse Categories</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categories.slice(0, 9).map((category) => (
+                    <div
+                      key={category.id}
+                      onClick={() =>
+                        navigate(`/explore?category=${category.slug}`)
+                      }
+                      className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted cursor-pointer transition-all"
+                    >
+                      <p className="font-semibold">{category.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {category.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </>
+      )}
+
+      {/* Loading state for search */}
+      {loading && (
+        <div className="flex justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        </div>
+      )}
+
+      {/* No results message */}
+      {searchResults &&
+        searchResults.users.length === 0 &&
+        searchResults.tags.length === 0 &&
+        searchResults.posts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">
+              No results found for "{searchQuery}"
+            </p>
+          </div>
+        )}
     </div>
   );
 

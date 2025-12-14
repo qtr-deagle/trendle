@@ -1,22 +1,30 @@
-import { Link, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Users, 
-  AlertTriangle, 
-  MessageSquare, 
-  FolderOpen, 
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Users,
+  AlertTriangle,
+  MessageSquare,
+  FolderOpen,
   Tag,
   Bell,
-  History
+  History,
+  LogOut,
 } from "lucide-react";
+import { useAdmin } from "@/contexts/AdminContext";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
   { icon: Users, label: "User", path: "/admin/users" },
   { icon: AlertTriangle, label: "Reports", path: "/admin/reports" },
   { icon: MessageSquare, label: "Messages", path: "/admin/messages" },
-  { icon: FolderOpen, label: "Categories management", path: "/admin/categories" },
+  {
+    icon: FolderOpen,
+    label: "Categories management",
+    path: "/admin/categories",
+  },
   { icon: Tag, label: "Tags setter", path: "/admin/tags" },
   { icon: History, label: "Audit Logs", path: "/admin/logs" },
 ];
@@ -28,6 +36,18 @@ interface AdminLayoutProps {
 
 const AdminLayout = ({ children, title }: AdminLayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { admin, adminLogout } = useAdmin();
+
+  const handleLogout = async () => {
+    try {
+      await adminLogout();
+      toast.success("Logged out successfully");
+      navigate("/admin");
+    } catch (error) {
+      toast.error("Failed to logout");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -35,7 +55,9 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
       <aside className="w-72 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-screen">
         <div className="p-6">
           <Link to="/">
-            <h1 className="text-3xl font-black text-foreground italic">trendle</h1>
+            <h1 className="text-3xl font-black text-foreground italic">
+              trendle
+            </h1>
           </Link>
         </div>
 
@@ -61,13 +83,29 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
         </nav>
 
         {/* Admin User */}
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="p-4 border-t border-sidebar-border space-y-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
               <span className="text-xl">◆</span>
             </div>
-            <span className="font-medium">bnchjeno</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">
+                {admin?.username || "Admin"}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {admin?.email}
+              </p>
+            </div>
           </div>
+          <Button
+            onClick={handleLogout}
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-muted-foreground hover:text-destructive"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </aside>
 

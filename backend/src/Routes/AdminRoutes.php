@@ -11,9 +11,11 @@ use App\Services\AdminReportService;
 use App\Services\AdminContactMessageService;
 use App\Services\AdminLogService;
 
-class AdminRoutes {
-    
-    public static function login() {
+class AdminRoutes
+{
+
+    public static function login()
+    {
         $data = json_decode(file_get_contents('php://input'), true);
 
         if (!isset($data['email']) || !isset($data['password'])) {
@@ -66,7 +68,8 @@ class AdminRoutes {
         }
     }
 
-    public static function verifyAdmin() {
+    public static function verifyAdmin()
+    {
         $token = Auth::getToken();
 
         if (!$token) {
@@ -108,7 +111,31 @@ class AdminRoutes {
         }
     }
 
-    public static function getDashboardMetrics() {
+    public static function logout()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        // In JWT-based auth, we don't need to invalidate on server side
+        // The client will remove the token from localStorage
+        http_response_code(200);
+        echo json_encode(['message' => 'Logged out successfully']);
+    }
+
+    public static function getDashboardMetrics()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -117,13 +144,13 @@ class AdminRoutes {
 
             // Get total users
             $users = $conn->query('SELECT COUNT(*) as count FROM users')->fetch_assoc();
-            
+
             // Get total posts
             $posts = $conn->query('SELECT COUNT(*) as count FROM posts')->fetch_assoc();
-            
+
             // Get total communities
             $communities = $conn->query('SELECT COUNT(*) as count FROM communities')->fetch_assoc();
-            
+
             // Get active sessions (last 24 hours)
             $sessions = $conn->query('SELECT COUNT(*) as count FROM sessions WHERE created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)')->fetch_assoc();
 
@@ -143,7 +170,8 @@ class AdminRoutes {
         }
     }
 
-    public static function getAllUsers() {
+    public static function getAllUsers()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -164,7 +192,8 @@ class AdminRoutes {
         }
     }
 
-    public static function getUserDetail() {
+    public static function getUserDetail()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -190,7 +219,8 @@ class AdminRoutes {
         }
     }
 
-    public static function banUser() {
+    public static function banUser()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -220,7 +250,8 @@ class AdminRoutes {
         }
     }
 
-    public static function activateUser() {
+    public static function activateUser()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -248,7 +279,8 @@ class AdminRoutes {
         }
     }
 
-    public static function promoteToAdmin() {
+    public static function promoteToAdmin()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -276,7 +308,8 @@ class AdminRoutes {
         }
     }
 
-    public static function demoteFromAdmin() {
+    public static function demoteFromAdmin()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -304,7 +337,8 @@ class AdminRoutes {
         }
     }
 
-    public static function updateUserStatus() {
+    public static function updateUserStatus()
+    {
         if (!self::checkAdminAuth()) return;
 
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -337,7 +371,8 @@ class AdminRoutes {
     }
 
     // ========== TAG MANAGEMENT ==========
-    public static function getAllTags() {
+    public static function getAllTags()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -358,7 +393,8 @@ class AdminRoutes {
         }
     }
 
-    public static function createTag() {
+    public static function createTag()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -390,7 +426,8 @@ class AdminRoutes {
         }
     }
 
-    public static function updateTag() {
+    public static function updateTag()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -419,7 +456,8 @@ class AdminRoutes {
         }
     }
 
-    public static function deleteTag() {
+    public static function deleteTag()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -447,7 +485,8 @@ class AdminRoutes {
     }
 
     // ========== CATEGORY MANAGEMENT ==========
-    public static function getAllCategories() {
+    public static function getAllCategories()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -468,7 +507,8 @@ class AdminRoutes {
         }
     }
 
-    public static function getCategoryDetail() {
+    public static function getCategoryDetail()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -494,7 +534,8 @@ class AdminRoutes {
         }
     }
 
-    public static function createCategory() {
+    public static function createCategory()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -529,7 +570,8 @@ class AdminRoutes {
         }
     }
 
-    public static function updateCategory() {
+    public static function updateCategory()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -558,7 +600,8 @@ class AdminRoutes {
         }
     }
 
-    public static function deleteCategory() {
+    public static function deleteCategory()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -586,7 +629,8 @@ class AdminRoutes {
     }
 
     // ========== REPORT MANAGEMENT ==========
-    public static function getAllReports() {
+    public static function getAllReports()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -608,7 +652,8 @@ class AdminRoutes {
         }
     }
 
-    public static function getReportDetail() {
+    public static function getReportDetail()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -634,7 +679,8 @@ class AdminRoutes {
         }
     }
 
-    public static function updateReportStatus() {
+    public static function updateReportStatus()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -674,7 +720,8 @@ class AdminRoutes {
         }
     }
 
-    public static function approveReport() {
+    public static function approveReport()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -708,7 +755,8 @@ class AdminRoutes {
         }
     }
 
-    public static function dismissReport() {
+    public static function dismissReport()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -737,7 +785,8 @@ class AdminRoutes {
         }
     }
 
-    public static function getReportStats() {
+    public static function getReportStats()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -754,7 +803,8 @@ class AdminRoutes {
     }
 
     // ========== MESSAGE/CONTACT MANAGEMENT ==========
-    public static function getAllMessages() {
+    public static function getAllMessages()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -775,7 +825,8 @@ class AdminRoutes {
         }
     }
 
-    public static function getMessageDetail() {
+    public static function getMessageDetail()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -801,7 +852,8 @@ class AdminRoutes {
         }
     }
 
-    public static function sendMessageReply() {
+    public static function sendMessageReply()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -836,7 +888,8 @@ class AdminRoutes {
         }
     }
 
-    public static function markMessageAsRead() {
+    public static function markMessageAsRead()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -863,7 +916,8 @@ class AdminRoutes {
         }
     }
 
-    public static function getMessageStats() {
+    public static function getMessageStats()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -880,7 +934,8 @@ class AdminRoutes {
     }
 
     // ========== ADMIN LOG MANAGEMENT ==========
-    public static function getAllLogs() {
+    public static function getAllLogs()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -904,7 +959,8 @@ class AdminRoutes {
         }
     }
 
-    public static function getLogDetail() {
+    public static function getLogDetail()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -930,7 +986,8 @@ class AdminRoutes {
         }
     }
 
-    public static function getActivityStats() {
+    public static function getActivityStats()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -949,7 +1006,8 @@ class AdminRoutes {
         }
     }
 
-    public static function getAuditTrail() {
+    public static function getAuditTrail()
+    {
         if (!self::checkAdminAuth()) return;
 
         try {
@@ -976,7 +1034,8 @@ class AdminRoutes {
 
 
 
-    private static function checkAdminAuth() {
+    private static function checkAdminAuth()
+    {
         $token = Auth::getToken();
 
         if (!$token) {
@@ -1020,7 +1079,8 @@ class AdminRoutes {
      * Get the authenticated admin user's ID
      * Must be called after checkAdminAuth() returns true
      */
-    private static function getAdminId() {
+    private static function getAdminId()
+    {
         $token = Auth::getToken();
         $decoded = Auth::verifyToken($token);
         return $decoded['userId'] ?? null;

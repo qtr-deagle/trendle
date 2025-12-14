@@ -1,64 +1,89 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import CreatePostBar from "@/components/post/CreatePostBar";
 import PostCard from "@/components/post/PostCard";
 import { cn } from "@/lib/utils";
+import { apiCallWithAuth } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const tabs = ["For you", "Following", "Your Tags"];
 
-const mockPosts = [
-  {
-    id: "1",
-    author: {
-      username: "renzored",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=renzored",
-    },
-    content: "You know, before the 2024 US presidential election \"no rules, just right\" was just the slogan for outback steakhouse. I didn't know it was going to be the future of politics in America.",
-    hashtags: ["no rules just right", "politics"],
-    likes: 42,
-    comments: 12,
-    reposts: 8,
-    createdAt: "2h ago",
-  },
-  {
-    id: "2",
-    author: {
-      username: "bloombound",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=bloombound",
-    },
-    content: "\"And sometimes I have kept my feelings to myself because I could find no language to describe them in.\"\n\n— Jane Austen",
-    hashtags: ["life", "quotes", "life quotes", "love", "motivation", "spilled thoughts", "poetry", "life lesson"],
-    likes: 2,
-    comments: 4,
-    reposts: 1,
-    createdAt: "5h ago",
-  },
-  {
-    id: "3",
-    author: {
-      username: "artlover",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=artlover",
-    },
-    content: "Just discovered this amazing digital artist. Their use of color and light is absolutely mesmerizing! 🎨✨",
-    image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800",
-    hashtags: ["art", "digital art", "inspiration"],
-    likes: 156,
-    comments: 23,
-    reposts: 45,
-    createdAt: "1d ago",
-  },
-];
+interface Post {
+  id: number;
+  author: {
+    id: number;
+    username: string;
+    display_name: string;
+    avatar: string;
+  };
+  content: string;
+  image: string | null;
+  likes: number;
+  comments: number;
+  reposts: number;
+  createdAt: string;
+  isLiked: boolean;
+}
 
 interface HomeProps {
   useViewSwitching?: boolean;
 }
 
-const Home = ({ useViewSwitching = false }: HomeProps) => {
+const Home = ({ useViewSwitching }: HomeProps) => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("For you");
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetchPosts();
+  }, [activeTab]);
+
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        // Show default/mock posts if not authenticated
+        setLoading(false);
+        return;
+      }
+
+      const response = await apiCallWithAuth(
+        "/posts/feed?limit=20&offset=0",
+        {
+          method: "GET",
+        },
+        token
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch posts");
+      }
+
+      const data = await response.json();
+      if (data.success && Array.isArray(data.posts)) {
+        setPosts(data.posts);
+      } else {
+        setError("Failed to load posts");
+      }
+    } catch (err) {
+      console.error("Error fetching posts:", err);
+      setError("Failed to load posts");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
+    logout();
     navigate("/");
   };
 
@@ -90,9 +115,42 @@ const Home = ({ useViewSwitching = false }: HomeProps) => {
 
       {/* Posts Feed */}
       <div className="space-y-6">
-        {mockPosts.map((post) => (
-          <PostCard key={post.id} {...post} />
-        ))}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-destructive">{error}</p>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">
+              No posts yet. Follow users to see their posts!
+            </p>
+          </div>
+        ) : (
+          posts.map((post) => (
+            <PostCard
+              key={post.id}
+              id={post.id.toString()}
+              author={{
+                id: post.author.id,
+                username: post.author.username,
+                avatar: post.author.avatar,
+              }}
+              content={post.content}
+              image={post.image}
+              hashtags={[]}
+              likes={post.likes}
+              comments={post.comments}
+              reposts={post.reposts}
+              createdAt={post.createdAt}
+              isLiked={post.isLiked}
+              onDelete={() => fetchPosts()}
+            />
+          ))
+        )}
       </div>
     </div>
   );
@@ -101,11 +159,7 @@ const Home = ({ useViewSwitching = false }: HomeProps) => {
     return content;
   }
 
-  return (
-    <MainLayout onLogout={handleLogout}>
-      {content}
-    </MainLayout>
-  );
+  return <MainLayout onLogout={handleLogout}>{content}</MainLayout>;
 };
 
 export default Home;

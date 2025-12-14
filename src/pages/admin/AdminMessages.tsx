@@ -2,8 +2,21 @@ import { useEffect, useState } from "react";
 import { Search, Eye, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,7 +48,9 @@ const AdminMessages = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState<MessageDetail | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<MessageDetail | null>(
+    null
+  );
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
@@ -44,7 +59,19 @@ const AdminMessages = () => {
   const fetchMessages = async (pageNum = 1) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
       const params = new URLSearchParams({
         page: pageNum.toString(),
         limit: limit.toString(),
@@ -54,17 +81,35 @@ const AdminMessages = () => {
         params.append("status", filterStatus);
       }
 
-      const response = await fetch(`/api/admin/messages?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await fetch(
+        `${apiUrl}/admin/messages?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
-        setMessages(data.messages);
-        setTotalMessages(data.total);
+        setMessages(Array.isArray(data.messages) ? data.messages : []);
+        setTotalMessages(data.total || 0);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Fetch messages error:", response.status, errorData);
+        toast({
+          title: "Error",
+          description:
+            errorData.error || `Failed to fetch messages (${response.status})`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch messages", variant: "destructive" });
+      console.error("Fetch messages error:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to fetch messages",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -79,28 +124,45 @@ const AdminMessages = () => {
       ...msg,
       message: "Message content here", // This should come from API
       admin_reply: null,
-      replied_at: null
+      replied_at: null,
     });
     setShowDetailModal(true);
   };
 
   const handleSendReply = async () => {
     if (!selectedMessage || !replyText.trim()) {
-      toast({ title: "Error", description: "Reply cannot be empty", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Reply cannot be empty",
+        variant: "destructive",
+      });
       return;
     }
 
     setReplying(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/messages/${selectedMessage.id}/reply`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ admin_reply: replyText })
-      });
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        return;
+      }
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const response = await fetch(
+        `${apiUrl}/admin/messages/${selectedMessage.id}/reply`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ admin_reply: replyText }),
+        }
+      );
 
       if (response.ok) {
         toast({ title: "Success", description: "Reply sent successfully" });
@@ -108,10 +170,18 @@ const AdminMessages = () => {
         setShowDetailModal(false);
         fetchMessages(page);
       } else {
-        toast({ title: "Error", description: "Failed to send reply", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Failed to send reply",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to send reply", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to send reply",
+        variant: "destructive",
+      });
     } finally {
       setReplying(false);
     }
@@ -119,22 +189,39 @@ const AdminMessages = () => {
 
   const handleMarkAsRead = async (messageId: number) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/messages/${messageId}/status`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ status: "read" })
-      });
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        return;
+      }
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const response = await fetch(
+        `${apiUrl}/admin/messages/${messageId}/status`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "read" }),
+        }
+      );
 
       if (response.ok) {
         toast({ title: "Success", description: "Message marked as read" });
         fetchMessages(page);
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to update message", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to update message",
+        variant: "destructive",
+      });
     }
   };
 
@@ -168,10 +255,13 @@ const AdminMessages = () => {
             />
           </div>
 
-          <Select value={filterStatus} onValueChange={(value) => {
-            setFilterStatus(value);
-            setPage(1);
-          }}>
+          <Select
+            value={filterStatus}
+            onValueChange={(value) => {
+              setFilterStatus(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-40 bg-secondary border-none">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -194,25 +284,46 @@ const AdminMessages = () => {
         {loading ? (
           <div className="text-center py-8">Loading messages...</div>
         ) : messages.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">No messages found</div>
+          <div className="text-center py-8 text-muted-foreground">
+            No messages found
+          </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="border-border bg-muted/50">
-                <TableHead className="text-muted-foreground font-semibold">From</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Email</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Subject</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Status</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Date</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Actions</TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  From
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Email
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Subject
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Status
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Date
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {messages.map((msg) => (
-                <TableRow key={msg.id} className="border-border hover:bg-muted/50">
-                  <TableCell className="font-medium text-sm">{msg.name}</TableCell>
+                <TableRow
+                  key={msg.id}
+                  className="border-border hover:bg-muted/50"
+                >
+                  <TableCell className="font-medium text-sm">
+                    {msg.name}
+                  </TableCell>
                   <TableCell className="text-sm">{msg.email}</TableCell>
-                  <TableCell className="text-sm max-w-xs truncate">{msg.subject}</TableCell>
+                  <TableCell className="text-sm max-w-xs truncate">
+                    {msg.subject}
+                  </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(msg.status)}>
                       {msg.status.charAt(0).toUpperCase() + msg.status.slice(1)}
@@ -290,7 +401,9 @@ const AdminMessages = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <Card className="w-full max-w-2xl p-6 my-auto">
             <div className="flex items-start justify-between mb-4">
-              <h2 className="text-xl font-bold">Message from {selectedMessage.name}</h2>
+              <h2 className="text-xl font-bold">
+                Message from {selectedMessage.name}
+              </h2>
               <Button
                 variant="ghost"
                 size="sm"
@@ -305,12 +418,15 @@ const AdminMessages = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">From</p>
                   <p className="font-medium">{selectedMessage.name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedMessage.email}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedMessage.email}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
                   <Badge className={getStatusColor(selectedMessage.status)}>
-                    {selectedMessage.status.charAt(0).toUpperCase() + selectedMessage.status.slice(1)}
+                    {selectedMessage.status.charAt(0).toUpperCase() +
+                      selectedMessage.status.slice(1)}
                   </Badge>
                 </div>
               </div>
@@ -329,17 +445,24 @@ const AdminMessages = () => {
 
               {selectedMessage.admin_reply && (
                 <div className="bg-green-50 dark:bg-green-950 p-4 rounded border border-green-200 dark:border-green-800">
-                  <p className="text-sm text-muted-foreground mb-2">Admin Reply</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Admin Reply
+                  </p>
                   <p className="text-sm">{selectedMessage.admin_reply}</p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Replied on {selectedMessage.replied_at ? new Date(selectedMessage.replied_at).toLocaleString() : ""}
+                    Replied on{" "}
+                    {selectedMessage.replied_at
+                      ? new Date(selectedMessage.replied_at).toLocaleString()
+                      : ""}
                   </p>
                 </div>
               )}
 
               {!selectedMessage.admin_reply && (
                 <div className="border-t pt-4">
-                  <label className="text-sm font-medium mb-2 block">Send Reply</label>
+                  <label className="text-sm font-medium mb-2 block">
+                    Send Reply
+                  </label>
                   <Textarea
                     placeholder="Type your reply here..."
                     value={replyText}

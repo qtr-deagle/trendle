@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdmin } from "@/contexts/AdminContext";
 import { Button } from "@/components/ui/button";
@@ -8,27 +8,36 @@ import { Shield } from "lucide-react";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { adminLogin } = useAdmin();
+  const { adminLogin, isAdminAuthenticated, adminLoading } = useAdmin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAdminAuthenticated && !adminLoading) {
+      navigate("/admin/dashboard");
+    }
+  }, [isAdminAuthenticated, adminLoading, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       await adminLogin(email, password);
       toast.success("Welcome, Admin!");
       navigate("/admin/dashboard");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Admin login failed");
+      toast.error(
+        error instanceof Error ? error.message : "Admin login failed"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -42,7 +51,9 @@ const AdminLogin = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
             <Shield className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-4xl font-black text-foreground italic">trendle</h1>
+          <h1 className="text-4xl font-black text-foreground italic">
+            trendle
+          </h1>
           <p className="text-muted-foreground mt-2">Admin Panel</p>
         </div>
 
@@ -62,10 +73,10 @@ const AdminLogin = () => {
             className="h-14"
           />
 
-          <Button 
-            type="submit" 
-            variant="hero" 
-            size="xl" 
+          <Button
+            type="submit"
+            variant="hero"
+            size="xl"
             className="w-full"
             disabled={isLoading}
           >
@@ -73,7 +84,9 @@ const AdminLogin = () => {
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
-            <Link to="/" className="text-primary hover:underline">← Back to Trendle</Link>
+            <Link to="/" className="text-primary hover:underline">
+              ← Back to Trendle
+            </Link>
           </p>
         </form>
       </div>

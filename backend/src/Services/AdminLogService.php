@@ -16,10 +16,12 @@ use App\Config\Database;
  * 
  * Database interactions: admin_logs, users
  */
-class AdminLogService {
+class AdminLogService
+{
     private $db;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = Database::getInstance();
     }
 
@@ -35,43 +37,50 @@ class AdminLogService {
      * @param string $endDate End date for filtering (YYYY-MM-DD)
      * @return array Logs with pagination
      */
-    public function getAllLogs($page = 1, $limit = 50, $adminId = null, $action = '', 
-                               $targetType = '', $startDate = '', $endDate = '') {
+    public function getAllLogs(
+        $page = 1,
+        $limit = 50,
+        $adminId = null,
+        $action = '',
+        $targetType = '',
+        $startDate = '',
+        $endDate = ''
+    ) {
         $offset = ($page - 1) * $limit;
-        
+
         try {
-            $baseQuery = 'FROM admin_logs WHERE 1=1';
+            $baseQuery = 'WHERE 1=1';
             $params = [];
-            
+
             if (!empty($adminId)) {
                 $baseQuery .= ' AND admin_id = ?';
                 $params[] = $adminId;
             }
-            
+
             if (!empty($action)) {
                 $baseQuery .= ' AND action = ?';
                 $params[] = $action;
             }
-            
+
             if (!empty($targetType)) {
                 $baseQuery .= ' AND target_type = ?';
                 $params[] = $targetType;
             }
-            
+
             if (!empty($startDate)) {
                 $baseQuery .= ' AND DATE(created_at) >= ?';
                 $params[] = $startDate;
             }
-            
+
             if (!empty($endDate)) {
                 $baseQuery .= ' AND DATE(created_at) <= ?';
                 $params[] = $endDate;
             }
-            
+
             // Get total count
-            $countStmt = $this->db->execute('SELECT COUNT(*) as total ' . $baseQuery, $params);
+            $countStmt = $this->db->execute('SELECT COUNT(*) as total FROM admin_logs ' . $baseQuery, $params);
             $total = (int)$countStmt->get_result()->fetch_assoc()['total'];
-            
+
             // Get paginated logs
             $query = 'SELECT al.id, al.admin_id, al.action, al.target_type, al.target_id, 
                              al.details, al.created_at, u.username, u.avatar_url
@@ -80,13 +89,13 @@ class AdminLogService {
                      ' . $baseQuery . '
                      ORDER BY al.created_at DESC
                      LIMIT ? OFFSET ?';
-            
+
             $params[] = $limit;
             $params[] = $offset;
-            
+
             $stmt = $this->db->execute($query, $params);
             $result = $stmt->get_result();
-            
+
             $logs = [];
             while ($row = $result->fetch_assoc()) {
                 // Parse JSON details
@@ -99,7 +108,7 @@ class AdminLogService {
                 }
                 $logs[] = $row;
             }
-            
+
             return [
                 'logs' => $logs,
                 'total' => $total,
@@ -118,7 +127,8 @@ class AdminLogService {
      * @param int $logId Log ID
      * @return array Complete log details
      */
-    public function getLogDetail($logId) {
+    public function getLogDetail($logId)
+    {
         try {
             $stmt = $this->db->execute(
                 'SELECT al.id, al.admin_id, al.action, al.target_type, al.target_id, 
@@ -128,14 +138,14 @@ class AdminLogService {
                  WHERE al.id = ?',
                 [$logId]
             );
-            
+
             $result = $stmt->get_result();
             if ($result->num_rows === 0) {
                 throw new \Exception('Log entry not found');
             }
-            
+
             $log = $result->fetch_assoc();
-            
+
             // Parse JSON details
             if (!empty($log['details'])) {
                 try {
@@ -144,7 +154,7 @@ class AdminLogService {
                     // Keep as is if not valid JSON
                 }
             }
-            
+
             return $log;
         } catch (\Exception $e) {
             error_log('Get log detail error: ' . $e->getMessage());
@@ -159,7 +169,8 @@ class AdminLogService {
      * @param int $limit Number of recent logs to retrieve
      * @return array Recent activity logs
      */
-    public function getAdminActivity($adminId, $limit = 30) {
+    public function getAdminActivity($adminId, $limit = 30)
+    {
         try {
             $stmt = $this->db->execute(
                 'SELECT al.id, al.action, al.target_type, al.target_id, al.details, al.created_at
@@ -169,10 +180,10 @@ class AdminLogService {
                  LIMIT ?',
                 [$adminId, $limit]
             );
-            
+
             $result = $stmt->get_result();
             $logs = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 if (!empty($row['details'])) {
                     try {
@@ -183,7 +194,7 @@ class AdminLogService {
                 }
                 $logs[] = $row;
             }
-            
+
             return $logs;
         } catch (\Exception $e) {
             error_log('Get admin activity error: ' . $e->getMessage());
@@ -198,48 +209,49 @@ class AdminLogService {
      * @param string $endDate End date (YYYY-MM-DD)
      * @return array Activity stats by action type
      */
-    public function getActivityStats($startDate = '', $endDate = '') {
+    public function getActivityStats($startDate = '', $endDate = '')
+    {
         try {
             $baseQuery = 'FROM admin_logs WHERE 1=1';
             $params = [];
-            
+
             if (!empty($startDate)) {
                 $baseQuery .= ' AND DATE(created_at) >= ?';
                 $params[] = $startDate;
             }
-            
+
             if (!empty($endDate)) {
                 $baseQuery .= ' AND DATE(created_at) <= ?';
                 $params[] = $endDate;
             }
-            
+
             // Get total logs
             $totalStmt = $this->db->execute('SELECT COUNT(*) as total ' . $baseQuery, $params);
             $total = (int)$totalStmt->get_result()->fetch_assoc()['total'];
-            
+
             // Get logs by action
             $actionQuery = 'SELECT action, COUNT(*) as count ' . $baseQuery . ' GROUP BY action';
             $actionStmt = $this->db->execute($actionQuery, $params);
-            
+
             $byAction = [];
             while ($row = $actionStmt->get_result()->fetch_assoc()) {
                 $byAction[$row['action']] = (int)$row['count'];
             }
-            
+
             // Get logs by target type
             $targetQuery = 'SELECT target_type, COUNT(*) as count ' . $baseQuery . ' GROUP BY target_type';
             $targetStmt = $this->db->execute($targetQuery, $params);
-            
+
             $byTargetType = [];
             while ($row = $targetStmt->get_result()->fetch_assoc()) {
                 $byTargetType[$row['target_type']] = (int)$row['count'];
             }
-            
+
             // Get top admins
-            $adminQuery = 'SELECT u.id, u.username, COUNT(*) as action_count ' . 
-                         'FROM admin_logs al JOIN users u ON al.admin_id = u.id ' .
-                         'WHERE 1=1';
-            
+            $adminQuery = 'SELECT u.id, u.username, COUNT(*) as action_count ' .
+                'FROM admin_logs al JOIN users u ON al.admin_id = u.id ' .
+                'WHERE 1=1';
+
             $adminParams = $params;
             if (!empty($startDate)) {
                 $adminQuery .= ' AND DATE(al.created_at) >= ?';
@@ -249,16 +261,16 @@ class AdminLogService {
                 $adminQuery .= ' AND DATE(al.created_at) <= ?';
                 $adminParams[] = $endDate;
             }
-            
+
             $adminQuery .= ' GROUP BY u.id ORDER BY action_count DESC LIMIT 10';
-            
+
             $adminStmt = $this->db->execute($adminQuery, $adminParams);
-            
+
             $topAdmins = [];
             while ($row = $adminStmt->get_result()->fetch_assoc()) {
                 $topAdmins[] = $row;
             }
-            
+
             return [
                 'total_logs' => $total,
                 'by_action' => $byAction,
@@ -281,16 +293,17 @@ class AdminLogService {
      * @param array $details Additional details as JSON
      * @return int Log entry ID
      */
-    public function createLog($adminId, $action, $targetType, $targetId, $details = []) {
+    public function createLog($adminId, $action, $targetType, $targetId, $details = [])
+    {
         try {
             $detailsJson = !empty($details) ? json_encode($details) : null;
-            
+
             $stmt = $this->db->execute(
                 'INSERT INTO admin_logs (admin_id, action, target_type, target_id, details, created_at) 
                  VALUES (?, ?, ?, ?, ?, NOW())',
                 [$adminId, $action, $targetType, $targetId, $detailsJson]
             );
-            
+
             return $this->db->getConnection()->insert_id;
         } catch (\Exception $e) {
             error_log('Create log error: ' . $e->getMessage());
@@ -306,7 +319,8 @@ class AdminLogService {
      * @param int $targetId Resource ID
      * @return array Audit trail
      */
-    public function getAuditTrail($targetType, $targetId) {
+    public function getAuditTrail($targetType, $targetId)
+    {
         try {
             $stmt = $this->db->execute(
                 'SELECT al.id, al.admin_id, al.action, al.details, al.created_at, u.username, u.avatar_url
@@ -316,10 +330,10 @@ class AdminLogService {
                  ORDER BY al.created_at DESC',
                 [$targetType, $targetId]
             );
-            
+
             $result = $stmt->get_result();
             $trail = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 if (!empty($row['details'])) {
                     try {
@@ -330,7 +344,7 @@ class AdminLogService {
                 }
                 $trail[] = $row;
             }
-            
+
             return $trail;
         } catch (\Exception $e) {
             error_log('Get audit trail error: ' . $e->getMessage());

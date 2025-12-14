@@ -2,7 +2,13 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 export interface AuthContextType {
   isAuthenticated: boolean;
-  user: { id: string; username: string; email: string; displayName?: string; avatar?: string } | null;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    displayName?: string;
+    avatar?: string;
+  } | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   signup: (username: string, email: string, password: string) => Promise<void>;
@@ -12,11 +18,17 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ id: string; username: string; email: string; displayName?: string; avatar?: string } | null>(null);
+  const [user, setUser] = useState<{
+    id: string;
+    username: string;
+    email: string;
+    displayName?: string;
+    avatar?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Check for persisted auth state on mount
@@ -40,7 +52,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (response.ok) {
         const data = await response.json();
-        const avatarUrl = data.user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.username}`;
+        const avatarUrl =
+          data.user.avatar_url ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.username}`;
         setIsAuthenticated(true);
         setUser({ ...data.user, avatar: avatarUrl });
       } else {
@@ -72,7 +86,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const data = await response.json();
     localStorage.setItem("token", data.token);
     setIsAuthenticated(true);
-    const avatarUrl = data.user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.username}`;
+    const avatarUrl =
+      data.user.avatar_url ||
+      `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.username}`;
     setUser({ ...data.user, avatar: avatarUrl });
   };
 
@@ -84,7 +100,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateUser = (userData: any) => {
     if (user) {
-      const avatarUrl = userData.avatar_url || userData.avatar || user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+      const avatarUrl =
+        userData.avatar_url ||
+        userData.avatar ||
+        user.avatar ||
+        `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
       setUser({ ...user, ...userData, avatar: avatarUrl });
     }
   };
@@ -106,12 +126,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const data = await response.json();
     localStorage.setItem("token", data.token);
     setIsAuthenticated(true);
-    const avatarUrl = data.user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.username}`;
+    const avatarUrl =
+      data.user.avatar_url ||
+      `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.username}`;
     setUser({ ...data.user, avatar: avatarUrl });
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, signup, updateUser, loading }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        user,
+        login,
+        logout,
+        signup,
+        updateUser,
+        loading,
+      }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );

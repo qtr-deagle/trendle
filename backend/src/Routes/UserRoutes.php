@@ -5,9 +5,11 @@ namespace App\Routes;
 use App\Config\Database;
 use App\Middleware\Auth;
 
-class UserRoutes {
-    
-    public static function updateAvatar() {
+class UserRoutes
+{
+
+    public static function updateAvatar()
+    {
         $token = Auth::getToken();
 
         if (!$token) {
@@ -30,7 +32,7 @@ class UserRoutes {
         }
 
         $file = $_FILES['avatar'];
-        
+
         // Validate file
         if ($file['error'] !== UPLOAD_ERR_OK) {
             http_response_code(400);
@@ -95,7 +97,8 @@ class UserRoutes {
         }
     }
 
-    public static function updateProfile() {
+    public static function updateProfile()
+    {
         $token = Auth::getToken();
 
         if (!$token) {
@@ -136,7 +139,7 @@ class UserRoutes {
 
             if (isset($data['interests'])) {
                 // Convert array to comma-separated string
-                $interestsStr = is_array($data['interests']) 
+                $interestsStr = is_array($data['interests'])
                     ? implode(', ', $data['interests'])
                     : $data['interests'];
                 $updates[] = 'interests = ?';
@@ -182,7 +185,61 @@ class UserRoutes {
         }
     }
 
-    public static function getProfile() {
+    public static function getCurrentUserProfile()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        try {
+            $db = Database::getInstance();
+
+            $stmt = $db->execute(
+                'SELECT id, username, display_name, bio, avatar_url, interests, followers, following, created_at FROM users WHERE id = ? LIMIT 1',
+                [$decoded['userId']]
+            );
+
+            $result = $stmt->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'User not found']);
+                return;
+            }
+
+            $user = $result->fetch_assoc();
+
+            // Parse interests if they exist
+            if ($user['interests']) {
+                $user['interests'] = array_map('trim', explode(',', $user['interests']));
+            } else {
+                $user['interests'] = [];
+            }
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            error_log('Get current user profile error: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to fetch profile']);
+        }
+    }
+
+    public static function getProfile()
+    {
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         // Extract username from path like /api/user/profile/username
         preg_match('#/profile/([a-zA-Z0-9_]+)$#', $path, $matches);
@@ -210,7 +267,7 @@ class UserRoutes {
             }
 
             $user = $result->fetch_assoc();
-            
+
             // Parse interests if they exist
             if ($user['interests']) {
                 $user['interests'] = array_map('trim', explode(',', $user['interests']));
@@ -227,7 +284,8 @@ class UserRoutes {
         }
     }
 
-    public static function followUser() {
+    public static function followUser()
+    {
         $token = Auth::getToken();
 
         if (!$token) {
@@ -308,7 +366,8 @@ class UserRoutes {
         }
     }
 
-    public static function unfollowUser() {
+    public static function unfollowUser()
+    {
         $token = Auth::getToken();
 
         if (!$token) {
@@ -325,8 +384,9 @@ class UserRoutes {
         }
 
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $parts = explode('/', array_filter(explode('/', $path)));
-        $targetUsername = $parts[count($parts) - 2] ?? null;
+        $pathParts = explode('/', $path);
+        $parts = array_filter($pathParts);
+        $targetUsername = isset($parts[2]) ? $parts[2] : null;
 
         if (!$targetUsername) {
             http_response_code(400);
@@ -370,7 +430,8 @@ class UserRoutes {
         }
     }
 
-    public static function getFollowingList() {
+    public static function getFollowingList()
+    {
         $token = Auth::getToken();
 
         if (!$token) {
@@ -426,12 +487,13 @@ class UserRoutes {
         }
     }
 
-    public static function serveUploadedFile() {
+    public static function serveUploadedFile()
+    {
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $path = str_replace('/api/uploads/', '', $path);
-        
+
         $filePath = __DIR__ . '/../../uploads/' . $path;
-        
+
         if (!file_exists($filePath)) {
             http_response_code(404);
             echo json_encode(['error' => 'File not found']);
@@ -450,5 +512,829 @@ class UserRoutes {
         header('Content-Type: ' . $mimeType);
         header('Content-Length: ' . filesize($filePath));
         readfile($filePath);
+    }
+
+    // ========== POST ENDPOINTS ==========
+
+    public static function getFeedPosts()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $limit = (int)($_GET['limit'] ?? 20);
+        $offset = (int)($_GET['offset'] ?? 0);
+
+        $result = \App\Services\UserPostService::getFeedPosts($decoded['userId'], $limit, $offset);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function getUserPosts()
+    {
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        preg_match('#/user/([a-zA-Z0-9_]+)/posts$#', $path, $matches);
+        $username = $matches[1] ?? null;
+
+        if (!$username) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Username required']);
+            return;
+        }
+
+        $limit = (int)($_GET['limit'] ?? 20);
+        $offset = (int)($_GET['offset'] ?? 0);
+
+        $result = \App\Services\UserPostService::getUserPosts($username, $limit, $offset);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function getPostDetail()
+    {
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        preg_match('#/post/(\d+)$#', $path, $matches);
+        $postId = $matches[1] ?? null;
+
+        if (!$postId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Post ID required']);
+            return;
+        }
+
+        $token = Auth::getToken();
+        $userId = null;
+
+        if ($token) {
+            $decoded = Auth::verifyToken($token);
+            if ($decoded) {
+                $userId = $decoded['userId'];
+            }
+        }
+
+        $result = \App\Services\UserPostService::getPostDetail($postId, $userId);
+
+        http_response_code($result['success'] ? 200 : 404);
+        echo json_encode($result);
+    }
+
+    public static function createPost()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $result = \App\Services\UserPostService::createPost(
+            $decoded['userId'],
+            $data['content'] ?? null,
+            $data['image_url'] ?? null
+        );
+
+        http_response_code($result['success'] ? 201 : 400);
+        echo json_encode($result);
+    }
+
+    public static function likePost()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        preg_match('#/post/(\d+)/like$#', $path, $matches);
+        $postId = $matches[1] ?? null;
+
+        if (!$postId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Post ID required']);
+            return;
+        }
+
+        $result = \App\Services\UserPostService::likePost($decoded['userId'], $postId);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function unlikePost()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        preg_match('#/post/(\d+)/unlike$#', $path, $matches);
+        $postId = $matches[1] ?? null;
+
+        if (!$postId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Post ID required']);
+            return;
+        }
+
+        $result = \App\Services\UserPostService::unlikePost($decoded['userId'], $postId);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    // ========== COMMUNITY ENDPOINTS ==========
+
+    public static function getAllCommunities()
+    {
+        $limit = (int)($_GET['limit'] ?? 20);
+        $offset = (int)($_GET['offset'] ?? 0);
+
+        $result = \App\Services\CommunityService::getAllCommunities($limit, $offset);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function getUserCommunities()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $result = \App\Services\CommunityService::getUserCommunities($decoded['userId']);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function getCommunityDetail()
+    {
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        preg_match('#/community/(\d+)$#', $path, $matches);
+        $communityId = $matches[1] ?? null;
+
+        if (!$communityId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Community ID required']);
+            return;
+        }
+
+        $token = Auth::getToken();
+        $userId = null;
+
+        if ($token) {
+            $decoded = Auth::verifyToken($token);
+            if ($decoded) {
+                $userId = $decoded['userId'];
+            }
+        }
+
+        $result = \App\Services\CommunityService::getCommunityDetail($communityId, $userId);
+
+        http_response_code($result['success'] ? 200 : 404);
+        echo json_encode($result);
+    }
+
+    public static function joinCommunity()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        preg_match('#/community/(\d+)/join$#', $path, $matches);
+        $communityId = $matches[1] ?? null;
+
+        if (!$communityId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Community ID required']);
+            return;
+        }
+
+        $result = \App\Services\CommunityService::joinCommunity($decoded['userId'], $communityId);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function leaveCommunity()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        preg_match('#/community/(\d+)/leave$#', $path, $matches);
+        $communityId = $matches[1] ?? null;
+
+        if (!$communityId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Community ID required']);
+            return;
+        }
+
+        $result = \App\Services\CommunityService::leaveCommunity($decoded['userId'], $communityId);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function searchCommunities()
+    {
+        $query = $_GET['query'] ?? '';
+        $limit = (int)($_GET['limit'] ?? 20);
+        $offset = (int)($_GET['offset'] ?? 0);
+
+        if (empty($query)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Query required']);
+            return;
+        }
+
+        $result = \App\Services\CommunityService::searchCommunities($query, $limit, $offset);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    // ========== MESSAGE ENDPOINTS ==========
+
+    public static function getConversations()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $result = \App\Services\MessageService::getConversations($decoded['userId']);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function getFollowersForMessaging()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $result = \App\Services\MessageService::getFollowersForMessaging($decoded['userId']);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function getConversation()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        preg_match('#/message/conversation/(\d+)$#', $path, $matches);
+        $otherUserId = $matches[1] ?? null;
+
+        if (!$otherUserId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'User ID required']);
+            return;
+        }
+
+        $result = \App\Services\MessageService::getConversation($decoded['userId'], $otherUserId);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function sendMessage()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($data['recipient_id']) || !isset($data['content'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Recipient ID and content required']);
+            return;
+        }
+
+        $result = \App\Services\MessageService::sendMessage(
+            $decoded['userId'],
+            $data['recipient_id'],
+            $data['content']
+        );
+
+        http_response_code($result['success'] ? 201 : 400);
+        echo json_encode($result);
+    }
+
+    public static function getUnreadMessageCount()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $result = \App\Services\MessageService::getUnreadCount($decoded['userId']);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    // ========== EXPLORE ENDPOINTS ==========
+
+    public static function getTrendingHashtags()
+    {
+        $limit = (int)($_GET['limit'] ?? 10);
+
+        $result = \App\Services\ExploreService::getTrendingHashtags($limit);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function getTrendingCategories()
+    {
+        $limit = (int)($_GET['limit'] ?? 10);
+
+        $result = \App\Services\ExploreService::getTrendingCategories($limit);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function globalSearch()
+    {
+        $query = $_GET['query'] ?? '';
+        $type = $_GET['type'] ?? 'all';
+        $limit = (int)($_GET['limit'] ?? 20);
+
+        if (empty($query)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Query required']);
+            return;
+        }
+
+        $result = \App\Services\ExploreService::globalSearch($query, $type, $limit);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function getPostsByHashtag()
+    {
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        preg_match('#/tag/([a-zA-Z0-9_\-]+)/posts$#', $path, $matches);
+        $tagSlug = $matches[1] ?? null;
+
+        if (!$tagSlug) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Tag slug required']);
+            return;
+        }
+
+        $limit = (int)($_GET['limit'] ?? 20);
+        $offset = (int)($_GET['offset'] ?? 0);
+
+        $result = \App\Services\ExploreService::getPostsByHashtag($tagSlug, $limit, $offset);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function getRecommendedUsers()
+    {
+        $limit = (int)($_GET['limit'] ?? 10);
+
+        $result = \App\Services\ExploreService::getRecommendedUsers($limit);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    // ========== SETTINGS ENDPOINTS ==========
+
+    public static function getUserSettings()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $result = \App\Services\SettingsService::getUserSettings($decoded['userId']);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function updateUserSettings()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $result = \App\Services\SettingsService::updateUserSettings($decoded['userId'], $data);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    public static function updateAccountSettings()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $result = \App\Services\SettingsService::updateAccountSettings($decoded['userId'], $data);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    /**
+     * Delete a post (only the owner can delete)
+     */
+    public static function deletePost()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (!isset($data['post_id'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Post ID is required']);
+            return;
+        }
+
+        $postId = $data['post_id'];
+
+        try {
+            $db = Database::getInstance();
+
+            // Verify ownership
+            $stmt = $db->execute(
+                'SELECT id, user_id, image_url FROM posts WHERE id = ?',
+                [$postId]
+            );
+
+            $result = $stmt->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Post not found']);
+                return;
+            }
+
+            $post = $result->fetch_assoc();
+
+            if ($post['user_id'] != $decoded['userId']) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Unauthorized to delete this post']);
+                return;
+            }
+
+            // Delete associated data (cascade handled by foreign keys, but delete image manually)
+            if ($post['image_url']) {
+                $imagePath = __DIR__ . '/../../uploads/posts/' . basename($post['image_url']);
+                if (file_exists($imagePath)) {
+                    unlink($imagePath);
+                }
+            }
+
+            // Delete the post
+            $stmt = $db->execute(
+                'DELETE FROM posts WHERE id = ? AND user_id = ?',
+                [$postId, $decoded['userId']]
+            );
+
+            http_response_code(200);
+            echo json_encode(['message' => 'Post deleted successfully']);
+        } catch (\Exception $e) {
+            error_log('Delete post error: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to delete post']);
+        }
+    }
+
+    /**
+     * Search for users by username or display name
+     */
+    public static function searchUsers()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $query = $_GET['q'] ?? '';
+        if (strlen($query) < 2) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Query must be at least 2 characters']);
+            return;
+        }
+
+        try {
+            $db = Database::getInstance();
+
+            $searchTerm = '%' . $query . '%';
+            $stmt = $db->execute(
+                'SELECT id, username, display_name, avatar_url, bio, followers, following 
+                 FROM users 
+                 WHERE username LIKE ? OR display_name LIKE ?
+                 AND id != ?
+                 LIMIT 20',
+                [$searchTerm, $searchTerm, $decoded['userId']]
+            );
+
+            $result = $stmt->get_result();
+            $users = [];
+
+            while ($row = $result->fetch_assoc()) {
+                // Check if current user follows this user
+                $followCheck = $db->execute(
+                    'SELECT id FROM follows WHERE follower_id = ? AND following_id = ?',
+                    [$decoded['userId'], $row['id']]
+                );
+
+                $isFollowing = $followCheck->get_result()->num_rows > 0;
+
+                $users[] = [
+                    'id' => $row['id'],
+                    'username' => $row['username'],
+                    'display_name' => $row['display_name'],
+                    'avatar' => $row['avatar_url'] ?: "https://api.dicebear.com/7.x/avataaars/svg?seed={$row['username']}",
+                    'bio' => $row['bio'],
+                    'followers' => intval($row['followers']),
+                    'following' => intval($row['following']),
+                    'isFollowing' => $isFollowing
+                ];
+            }
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'users' => $users,
+                'count' => count($users)
+            ]);
+        } catch (\Exception $e) {
+            error_log('Search users error: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to search users']);
+        }
+    }
+
+    /**
+     * Get messages with a specific user
+     */
+    public static function getMessages()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $userId = $_GET['user_id'] ?? null;
+        if (!$userId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'User ID is required']);
+            return;
+        }
+
+        $result = \App\Services\MessageService::getMessages($decoded['userId'], $userId);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+    }
+
+    /**
+     * Mark messages as read
+     */
+    public static function markMessagesAsRead()
+    {
+        $token = Auth::getToken();
+
+        if (!$token) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No token provided']);
+            return;
+        }
+
+        $decoded = Auth::verifyToken($token);
+        if (!$decoded) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid or expired token']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (!isset($data['sender_id'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Sender ID is required']);
+            return;
+        }
+
+        $result = \App\Services\MessageService::markAsRead($decoded['userId'], $data['sender_id']);
+
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
     }
 }

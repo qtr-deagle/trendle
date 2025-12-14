@@ -5,11 +5,13 @@ namespace App\Routes;
 use App\Config\Database;
 use App\Middleware\Auth;
 
-class AuthRoutes {
-    
-    public static function register() {
+class AuthRoutes
+{
+
+    public static function register()
+    {
         $data = json_decode(file_get_contents('php://input'), true);
-        
+
         if (!isset($data['username']) || !isset($data['email']) || !isset($data['password'])) {
             http_response_code(400);
             echo json_encode(['error' => 'All fields are required']);
@@ -45,7 +47,7 @@ class AuthRoutes {
                 'SELECT id FROM users WHERE email = ? OR username = ?',
                 [$data['email'], $data['username']]
             );
-            
+
             $result = $stmt->get_result();
             if ($result->num_rows > 0) {
                 http_response_code(400);
@@ -82,7 +84,8 @@ class AuthRoutes {
         }
     }
 
-    public static function login() {
+    public static function login()
+    {
         $data = json_decode(file_get_contents('php://input'), true);
 
         if (!isset($data['email']) || !isset($data['password'])) {
@@ -133,7 +136,8 @@ class AuthRoutes {
         }
     }
 
-    public static function adminLogin() {
+    public static function adminLogin()
+    {
         $data = json_decode(file_get_contents('php://input'), true);
 
         if (!isset($data['email']) || !isset($data['password'])) {
@@ -185,7 +189,8 @@ class AuthRoutes {
         }
     }
 
-    public static function me() {
+    public static function me()
+    {
         $token = Auth::getToken();
 
         if (!$token) {
@@ -217,7 +222,7 @@ class AuthRoutes {
             }
 
             $user = $result->fetch_assoc();
-            
+
             // Parse interests if they exist
             if ($user['interests']) {
                 $user['interests'] = array_map('trim', explode(',', $user['interests']));
