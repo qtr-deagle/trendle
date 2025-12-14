@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { apiCallWithAuth } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,17 +65,25 @@ const AdminCategories = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/admin/categories", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const token = localStorage.getItem("adminToken");
+      const response = await apiCallWithAuth(
+        "/admin/categories",
+        {
+          method: "GET",
+        },
+        token
+      );
 
       if (response.ok) {
         const data = await response.json();
         setCategories(data.categories);
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch categories", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to fetch categories",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -103,23 +112,27 @@ const AdminCategories = () => {
     e.preventDefault();
 
     if (!formData.name || !formData.slug) {
-      toast({ title: "Error", description: "Name and slug are required", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Name and slug are required",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
 
       if (editingId) {
         // Update
-        const response = await fetch(`/api/admin/categories/${editingId}`, {
-          method: "PUT",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
+        const response = await apiCallWithAuth(
+          `/admin/categories/${editingId}`,
+          {
+            method: "PUT",
+            body: JSON.stringify(formData),
           },
-          body: JSON.stringify(formData)
-        });
+          token
+        );
 
         if (response.ok) {
           toast({ title: "Success", description: "Category updated" });
@@ -129,14 +142,14 @@ const AdminCategories = () => {
         }
       } else {
         // Create
-        const response = await fetch("/api/admin/categories", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
+        const response = await apiCallWithAuth(
+          "/admin/categories",
+          {
+            method: "POST",
+            body: JSON.stringify(formData),
           },
-          body: JSON.stringify(formData)
-        });
+          token
+        );
 
         if (response.ok) {
           toast({ title: "Success", description: "Category created" });
@@ -156,7 +169,11 @@ const AdminCategories = () => {
         is_active: true,
       });
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save category", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to save category",
+        variant: "destructive",
+      });
     }
   };
 
@@ -164,18 +181,25 @@ const AdminCategories = () => {
     if (!categoryToDelete) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/categories/${categoryToDelete}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch(
+        `/api/admin/categories/${categoryToDelete}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.ok) {
         toast({ title: "Success", description: "Category deleted" });
         fetchCategories();
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to delete category", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to delete category",
+        variant: "destructive",
+      });
     } finally {
       setShowDeleteDialog(false);
       setCategoryToDelete(null);
@@ -195,14 +219,18 @@ const AdminCategories = () => {
       {/* Form */}
       {showForm && (
         <Card className="p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">{editingId ? "Edit Category" : "Create Category"}</h2>
+          <h2 className="text-lg font-semibold mb-4">
+            {editingId ? "Edit Category" : "Create Category"}
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Name *</label>
                 <Input
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="Category name"
                 />
               </div>
@@ -210,17 +238,23 @@ const AdminCategories = () => {
                 <label className="text-sm font-medium mb-2 block">Slug *</label>
                 <Input
                   value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, slug: e.target.value })
+                  }
                   placeholder="category-slug"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Description</label>
+              <label className="text-sm font-medium mb-2 block">
+                Description
+              </label>
               <Textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Category description"
                 className="min-h-20"
               />
@@ -231,7 +265,9 @@ const AdminCategories = () => {
                 <label className="text-sm font-medium mb-2 block">Icon</label>
                 <Input
                   value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, icon: e.target.value })
+                  }
                   placeholder="Icon name (optional)"
                 />
               </div>
@@ -241,12 +277,16 @@ const AdminCategories = () => {
                   <Input
                     type="color"
                     value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, color: e.target.value })
+                    }
                     className="w-16 h-10"
                   />
                   <Input
                     value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, color: e.target.value })
+                    }
                     placeholder="#000000"
                   />
                 </div>
@@ -254,11 +294,18 @@ const AdminCategories = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Display Order</label>
+              <label className="text-sm font-medium mb-2 block">
+                Display Order
+              </label>
               <Input
                 type="number"
                 value={formData.display_order}
-                onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    display_order: parseInt(e.target.value) || 0,
+                  })
+                }
                 placeholder="0"
               />
             </div>
@@ -268,14 +315,18 @@ const AdminCategories = () => {
                 <label className="text-sm font-medium">Visible</label>
                 <Switch
                   checked={formData.is_visible}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_visible: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_visible: checked })
+                  }
                 />
               </div>
               <div className="flex items-center justify-between p-3 bg-muted rounded">
                 <label className="text-sm font-medium">Active</label>
                 <Switch
                   checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_active: checked })
+                  }
                 />
               </div>
             </div>
@@ -313,7 +364,9 @@ const AdminCategories = () => {
       {loading ? (
         <div className="text-center py-8">Loading categories...</div>
       ) : categories.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">No categories found</div>
+        <div className="text-center py-8 text-muted-foreground">
+          No categories found
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.map((category) => (
@@ -322,11 +375,15 @@ const AdminCategories = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">{category.name}</h3>
-                    <Badge variant={category.is_active ? "default" : "secondary"}>
+                    <Badge
+                      variant={category.is_active ? "default" : "secondary"}
+                    >
                       {category.is_active ? "Active" : "Inactive"}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">/{category.slug}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    /{category.slug}
+                  </p>
                 </div>
                 <div
                   className="w-6 h-6 rounded border"
@@ -335,13 +392,19 @@ const AdminCategories = () => {
               </div>
 
               {category.description && (
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{category.description}</p>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                  {category.description}
+                </p>
               )}
 
               <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                 <span>Order: {category.display_order}</span>
                 <span className="flex items-center gap-1">
-                  {category.is_visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  {category.is_visible ? (
+                    <Eye className="w-3 h-3" />
+                  ) : (
+                    <EyeOff className="w-3 h-3" />
+                  )}
                 </span>
               </div>
 
@@ -377,7 +440,8 @@ const AdminCategories = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Category</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this category? This action cannot be undone.
+              Are you sure you want to delete this category? This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex gap-2">

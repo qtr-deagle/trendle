@@ -53,7 +53,7 @@ const AdminUsersNew = () => {
   const fetchUsers = async (searchVal = "", filterVal = "all", pageNum = 1) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const params = new URLSearchParams({
         page: pageNum.toString(),
         limit: limit.toString(),
@@ -95,7 +95,7 @@ const AdminUsersNew = () => {
 
   const handleViewDetail = async (userId: number) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const response = await fetch(`/api/admin/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -120,7 +120,7 @@ const AdminUsersNew = () => {
     if (!userToAction || !actionType) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const response = await fetch(`/api/admin/users/${userToAction.id}/status`, {
         method: "PUT",
         headers: {

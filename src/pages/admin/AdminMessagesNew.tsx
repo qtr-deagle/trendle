@@ -44,7 +44,7 @@ const AdminMessages = () => {
   const fetchMessages = async (pageNum = 1) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const params = new URLSearchParams({
         page: pageNum.toString(),
         limit: limit.toString(),
@@ -92,7 +92,7 @@ const AdminMessages = () => {
 
     setReplying(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const response = await fetch(`/api/admin/messages/${selectedMessage.id}/reply`, {
         method: "PUT",
         headers: {
@@ -119,7 +119,7 @@ const AdminMessages = () => {
 
   const handleMarkAsRead = async (messageId: number) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const response = await fetch(`/api/admin/messages/${messageId}/status`, {
         method: "PUT",
         headers: {

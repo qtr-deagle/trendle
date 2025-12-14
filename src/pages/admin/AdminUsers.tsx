@@ -2,8 +2,21 @@ import { useEffect, useState } from "react";
 import { Search, Eye, Ban, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -53,7 +66,19 @@ const AdminUsers = () => {
   const fetchUsers = async (searchVal = "", filterVal = "all", pageNum = 1) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
       const params = new URLSearchParams({
         page: pageNum.toString(),
         limit: limit.toString(),
@@ -65,19 +90,35 @@ const AdminUsers = () => {
         params.append("status", filterVal === "active" ? "active" : "inactive");
       }
 
-      const response = await fetch(`/api/admin/users?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await fetch(
+        `${apiUrl}/admin/users?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
-        setUsers(data.users);
-        setTotalUsers(data.total);
+        setUsers(data.users || []);
+        setTotalUsers(data.total || 0);
       } else {
-        toast({ title: "Error", description: "Failed to fetch users", variant: "destructive" });
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Fetch error response:", response.status, errorData);
+        toast({
+          title: "Error",
+          description:
+            errorData.error || `Failed to fetch users (${response.status})`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch users", variant: "destructive" });
+      console.error("Fetch error:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to fetch users",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -95,9 +136,20 @@ const AdminUsers = () => {
 
   const handleViewDetail = async (userId: number) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const response = await fetch(`${apiUrl}/admin/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
@@ -106,7 +158,11 @@ const AdminUsers = () => {
         setShowDetailModal(true);
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch user details", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to fetch user details",
+        variant: "destructive",
+      });
     }
   };
 
@@ -120,27 +176,51 @@ const AdminUsers = () => {
     if (!userToAction || !actionType) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/users/${userToAction.id}/status`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ is_active: actionType === "activate" })
-      });
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const response = await fetch(
+        `${apiUrl}/admin/users/${userToAction.id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ is_active: actionType === "activate" }),
+        }
+      );
 
       if (response.ok) {
         toast({
           title: "Success",
-          description: `User ${actionType === "ban" ? "banned" : "activated"} successfully`
+          description: `User ${
+            actionType === "ban" ? "banned" : "activated"
+          } successfully`,
         });
         fetchUsers(searchQuery, filter, page);
       } else {
-        toast({ title: "Error", description: "Failed to update user status", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Failed to update user status",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to update user status", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to update user status",
+        variant: "destructive",
+      });
     } finally {
       setShowActionDialog(false);
       setUserToAction(null);
@@ -164,10 +244,13 @@ const AdminUsers = () => {
               className="pl-10 bg-secondary border-none"
             />
           </div>
-          <Select value={filter} onValueChange={(value) => {
-            setFilter(value);
-            setPage(1);
-          }}>
+          <Select
+            value={filter}
+            onValueChange={(value) => {
+              setFilter(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-40 bg-secondary border-none">
               <SelectValue placeholder="Filter" />
             </SelectTrigger>
@@ -188,23 +271,42 @@ const AdminUsers = () => {
         {loading ? (
           <div className="text-center py-8">Loading users...</div>
         ) : users.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">No users found</div>
+          <div className="text-center py-8 text-muted-foreground">
+            No users found
+          </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="border-border bg-muted/50">
-                <TableHead className="text-muted-foreground font-semibold">User ID</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Username</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Email</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Joined</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Status</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Actions</TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  User ID
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Username
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Email
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Joined
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Status
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((user) => (
-                <TableRow key={user.id} className="border-border hover:bg-muted/50">
-                  <TableCell className="font-medium text-sm">{user.id}</TableCell>
+                <TableRow
+                  key={user.id}
+                  className="border-border hover:bg-muted/50"
+                >
+                  <TableCell className="font-medium text-sm">
+                    {user.id}
+                  </TableCell>
                   <TableCell className="text-sm">{user.username}</TableCell>
                   <TableCell className="text-sm">{user.email}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -327,7 +429,9 @@ const AdminUsers = () => {
 
               <div className="grid grid-cols-3 gap-4 py-4 border-y">
                 <div className="text-center">
-                  <p className="text-2xl font-bold">{selectedUser.posts_count}</p>
+                  <p className="text-2xl font-bold">
+                    {selectedUser.posts_count}
+                  </p>
                   <p className="text-xs text-muted-foreground">Posts</p>
                 </div>
                 <div className="text-center">
@@ -342,12 +446,16 @@ const AdminUsers = () => {
 
               <div>
                 <p className="text-sm text-muted-foreground">Joined</p>
-                <p className="text-sm">{new Date(selectedUser.created_at).toLocaleString()}</p>
+                <p className="text-sm">
+                  {new Date(selectedUser.created_at).toLocaleString()}
+                </p>
               </div>
 
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
-                <Badge variant={selectedUser.is_active ? "default" : "secondary"}>
+                <Badge
+                  variant={selectedUser.is_active ? "default" : "secondary"}
+                >
                   {selectedUser.is_active ? "Active" : "Inactive"}
                 </Badge>
               </div>
@@ -403,10 +511,7 @@ const AdminUsers = () => {
           </AlertDialogHeader>
           <div className="flex gap-2">
             <AlertDialogCancel className="flex-1">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmAction}
-              className="flex-1"
-            >
+            <AlertDialogAction onClick={handleConfirmAction} className="flex-1">
               {actionType === "ban" ? "Ban" : "Activate"}
             </AlertDialogAction>
           </div>

@@ -71,7 +71,7 @@ const AdminReports = () => {
   const fetchReports = async (pageNum = 1) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const params = new URLSearchParams({
         page: pageNum.toString(),
         limit: limit.toString(),
@@ -107,7 +107,7 @@ const AdminReports = () => {
 
   const handleViewDetail = async (reportId: number) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const response = await fetch(`/api/admin/reports/${reportId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -132,7 +132,7 @@ const AdminReports = () => {
     if (!selectedReport || !actionType) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
 
       if (actionType === "dismiss") {
         // Update report status to dismissed

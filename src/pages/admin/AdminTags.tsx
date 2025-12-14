@@ -6,7 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,17 +67,44 @@ const AdminTags = () => {
   const fetchTags = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/admin/tags", {
-        headers: { Authorization: `Bearer ${token}` }
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const response = await fetch(`${apiUrl}/admin/tags`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
         const data = await response.json();
-        setTags(data.tags);
+        setTags(Array.isArray(data.tags) ? data.tags : []);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Fetch tags error:", response.status, errorData);
+        toast({
+          title: "Error",
+          description:
+            errorData.error || `Failed to fetch tags (${response.status})`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch tags", variant: "destructive" });
+      console.error("Fetch tags error:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to fetch tags",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -81,9 +114,10 @@ const AdminTags = () => {
     fetchTags();
   }, []);
 
-  const filteredTags = tags.filter(tag =>
-    tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tag.slug.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredTags = tags.filter(
+    (tag) =>
+      tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tag.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleEdit = (tag: Tag) => {
@@ -102,22 +136,37 @@ const AdminTags = () => {
     e.preventDefault();
 
     if (!formData.name || !formData.slug) {
-      toast({ title: "Error", description: "Name and slug are required", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Name and slug are required",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
       if (editingId) {
         // Update
-        const response = await fetch(`/api/admin/tags/${editingId}`, {
+        const response = await fetch(`${apiUrl}/admin/tags/${editingId}`, {
           method: "PUT",
           headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(formData),
         });
 
         if (response.ok) {
@@ -128,13 +177,13 @@ const AdminTags = () => {
         }
       } else {
         // Create
-        const response = await fetch("/api/admin/tags", {
+        const response = await fetch(`${apiUrl}/admin/tags`, {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(formData),
         });
 
         if (response.ok) {
@@ -152,7 +201,11 @@ const AdminTags = () => {
         is_active: true,
       });
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save tag", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to save tag",
+        variant: "destructive",
+      });
     }
   };
 
@@ -160,10 +213,21 @@ const AdminTags = () => {
     if (!tagToDelete) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/tags/${tagToDelete}`, {
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const response = await fetch(`${apiUrl}/admin/tags/${tagToDelete}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
@@ -171,7 +235,11 @@ const AdminTags = () => {
         fetchTags();
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to delete tag", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to delete tag",
+        variant: "destructive",
+      });
     } finally {
       setShowDeleteDialog(false);
       setTagToDelete(null);
@@ -180,7 +248,11 @@ const AdminTags = () => {
 
   const handleMerge = async () => {
     if (!tagToMerge || !mergeTarget) {
-      toast({ title: "Error", description: "Please select both source and target tag", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Please select both source and target tag",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -189,10 +261,10 @@ const AdminTags = () => {
       const response = await fetch(`/api/admin/tags/${tagToMerge}/merge`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ merge_into_tag_id: parseInt(mergeTarget) })
+        body: JSON.stringify({ merge_into_tag_id: parseInt(mergeTarget) }),
       });
 
       if (response.ok) {
@@ -200,7 +272,11 @@ const AdminTags = () => {
         fetchTags();
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to merge tags", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to merge tags",
+        variant: "destructive",
+      });
     } finally {
       setShowMergeDialog(false);
       setTagToMerge(null);
@@ -221,14 +297,18 @@ const AdminTags = () => {
       {/* Form */}
       {showForm && (
         <Card className="p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">{editingId ? "Edit Tag" : "Create Tag"}</h2>
+          <h2 className="text-lg font-semibold mb-4">
+            {editingId ? "Edit Tag" : "Create Tag"}
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Name *</label>
                 <Input
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="Tag name"
                 />
               </div>
@@ -236,17 +316,23 @@ const AdminTags = () => {
                 <label className="text-sm font-medium mb-2 block">Slug *</label>
                 <Input
                   value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, slug: e.target.value })
+                  }
                   placeholder="tag-slug"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Description</label>
+              <label className="text-sm font-medium mb-2 block">
+                Description
+              </label>
               <Textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Tag description"
                 className="min-h-20"
               />
@@ -257,14 +343,18 @@ const AdminTags = () => {
                 <label className="text-sm font-medium">NSFW</label>
                 <Switch
                   checked={formData.is_nsfw}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_nsfw: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_nsfw: checked })
+                  }
                 />
               </div>
               <div className="flex items-center justify-between p-3 bg-muted rounded">
                 <label className="text-sm font-medium">Active</label>
                 <Switch
                   checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_active: checked })
+                  }
                 />
               </div>
             </div>
@@ -309,7 +399,9 @@ const AdminTags = () => {
       {loading ? (
         <div className="text-center py-8">Loading tags...</div>
       ) : filteredTags.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">No tags found</div>
+        <div className="text-center py-8 text-muted-foreground">
+          No tags found
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTags.map((tag) => (
@@ -323,16 +415,22 @@ const AdminTags = () => {
                       {tag.is_active ? "Active" : "Inactive"}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">/{tag.slug}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    /{tag.slug}
+                  </p>
                 </div>
               </div>
 
               {tag.description && (
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{tag.description}</p>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                  {tag.description}
+                </p>
               )}
 
               <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 p-2 bg-muted rounded">
-                <span>Used {tag.usage_count} time{tag.usage_count !== 1 ? 's' : ''}</span>
+                <span>
+                  Used {tag.usage_count} time{tag.usage_count !== 1 ? "s" : ""}
+                </span>
               </div>
 
               <div className="flex gap-2">
@@ -376,7 +474,8 @@ const AdminTags = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Tag</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this tag? This action cannot be undone.
+              Are you sure you want to delete this tag? This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex gap-2">
@@ -397,7 +496,8 @@ const AdminTags = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Merge Tags</AlertDialogTitle>
             <AlertDialogDescription>
-              Merge "{tags.find(t => t.id === tagToMerge)?.name || 'Tag'}" into another tag. The source tag will be deleted.
+              Merge "{tags.find((t) => t.id === tagToMerge)?.name || "Tag"}"
+              into another tag. The source tag will be deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -409,8 +509,8 @@ const AdminTags = () => {
               </SelectTrigger>
               <SelectContent>
                 {tags
-                  .filter(t => t.id !== tagToMerge)
-                  .map(tag => (
+                  .filter((t) => t.id !== tagToMerge)
+                  .map((tag) => (
                     <SelectItem key={tag.id} value={tag.id.toString()}>
                       {tag.name} (used {tag.usage_count} times)
                     </SelectItem>
@@ -421,10 +521,7 @@ const AdminTags = () => {
 
           <div className="flex gap-2">
             <AlertDialogCancel className="flex-1">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleMerge}
-              className="flex-1"
-            >
+            <AlertDialogAction onClick={handleMerge} className="flex-1">
               Merge
             </AlertDialogAction>
           </div>

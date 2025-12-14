@@ -2,8 +2,21 @@ import { useEffect, useState } from "react";
 import { Search, Eye, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,9 +61,13 @@ const AdminReports = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<ReportDetail | null>(null);
+  const [selectedReport, setSelectedReport] = useState<ReportDetail | null>(
+    null
+  );
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [actionType, setActionType] = useState<"approve" | "remove" | "warn" | "suspend" | "dismiss" | null>(null);
+  const [actionType, setActionType] = useState<
+    "approve" | "remove" | "warn" | "suspend" | "dismiss" | null
+  >(null);
   const [showActionDialog, setShowActionDialog] = useState(false);
   const [actionNotes, setActionNotes] = useState("");
   const { toast } = useToast();
@@ -71,7 +88,19 @@ const AdminReports = () => {
   const fetchReports = async (pageNum = 1) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
       const params = new URLSearchParams({
         page: pageNum.toString(),
         limit: limit.toString(),
@@ -85,17 +114,35 @@ const AdminReports = () => {
         params.append("reason", filterReason);
       }
 
-      const response = await fetch(`/api/admin/reports?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await fetch(
+        `${apiUrl}/admin/reports?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
-        setReports(data.reports);
-        setTotalReports(data.total);
+        setReports(Array.isArray(data.reports) ? data.reports : []);
+        setTotalReports(data.total || 0);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Fetch reports error:", response.status, errorData);
+        toast({
+          title: "Error",
+          description:
+            errorData.error || `Failed to fetch reports (${response.status})`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch reports", variant: "destructive" });
+      console.error("Fetch reports error:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to fetch reports",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -107,9 +154,19 @@ const AdminReports = () => {
 
   const handleViewDetail = async (reportId: number) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/reports/${reportId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        return;
+      }
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const response = await fetch(`${apiUrl}/admin/reports/${reportId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
@@ -118,11 +175,17 @@ const AdminReports = () => {
         setShowDetailModal(true);
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch report details", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to fetch report details",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleAction = (type: "approve" | "remove" | "warn" | "suspend" | "dismiss") => {
+  const handleAction = (
+    type: "approve" | "remove" | "warn" | "suspend" | "dismiss"
+  ) => {
     setActionType(type);
     setActionNotes("");
     setShowActionDialog(true);
@@ -132,18 +195,35 @@ const AdminReports = () => {
     if (!selectedReport || !actionType) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
       if (actionType === "dismiss") {
         // Update report status to dismissed
-        const response = await fetch(`/api/admin/reports/${selectedReport.id}/status`, {
-          method: "PUT",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ status: "dismissed", resolution_notes: actionNotes })
-        });
+        const response = await fetch(
+          `${apiUrl}/admin/reports/${selectedReport.id}/status`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              status: "dismissed",
+              resolution_notes: actionNotes,
+            }),
+          }
+        );
 
         if (response.ok) {
           toast({ title: "Success", description: "Report dismissed" });
@@ -152,23 +232,33 @@ const AdminReports = () => {
         }
       } else {
         // Take moderator action
-        const response = await fetch(`/api/admin/reports/${selectedReport.id}/action`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ action: actionType, reason: actionNotes })
-        });
+        const response = await fetch(
+          `/api/admin/reports/${selectedReport.id}/action`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ action: actionType, reason: actionNotes }),
+          }
+        );
 
         if (response.ok) {
-          toast({ title: "Success", description: `Action '${actionType}' applied` });
+          toast({
+            title: "Success",
+            description: `Action '${actionType}' applied`,
+          });
           setShowDetailModal(false);
           fetchReports(page);
         }
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to take action", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to take action",
+        variant: "destructive",
+      });
     } finally {
       setShowActionDialog(false);
       setActionType(null);
@@ -205,10 +295,13 @@ const AdminReports = () => {
             />
           </div>
 
-          <Select value={filterStatus} onValueChange={(value) => {
-            setFilterStatus(value);
-            setPage(1);
-          }}>
+          <Select
+            value={filterStatus}
+            onValueChange={(value) => {
+              setFilterStatus(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-40 bg-secondary border-none">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -220,15 +313,18 @@ const AdminReports = () => {
             </SelectContent>
           </Select>
 
-          <Select value={filterReason} onValueChange={(value) => {
-            setFilterReason(value);
-            setPage(1);
-          }}>
+          <Select
+            value={filterReason}
+            onValueChange={(value) => {
+              setFilterReason(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-40 bg-secondary border-none">
               <SelectValue placeholder="Reason" />
             </SelectTrigger>
             <SelectContent>
-              {reasons.map(reason => (
+              {reasons.map((reason) => (
                 <SelectItem key={reason.value} value={reason.value}>
                   {reason.label}
                 </SelectItem>
@@ -247,30 +343,56 @@ const AdminReports = () => {
         {loading ? (
           <div className="text-center py-8">Loading reports...</div>
         ) : reports.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">No reports found</div>
+          <div className="text-center py-8 text-muted-foreground">
+            No reports found
+          </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="border-border bg-muted/50">
-                <TableHead className="text-muted-foreground font-semibold">Report ID</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Reporter</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Reported User</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Reason</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Status</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Date</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Actions</TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Report ID
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Reporter
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Reported User
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Reason
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Status
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Date
+                </TableHead>
+                <TableHead className="text-muted-foreground font-semibold">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {reports.map((report) => (
-                <TableRow key={report.id} className="border-border hover:bg-muted/50">
-                  <TableCell className="font-medium text-sm">#{report.id}</TableCell>
-                  <TableCell className="text-sm">{report.reporter_username}</TableCell>
-                  <TableCell className="text-sm">{report.reported_user_username || "N/A"}</TableCell>
+                <TableRow
+                  key={report.id}
+                  className="border-border hover:bg-muted/50"
+                >
+                  <TableCell className="font-medium text-sm">
+                    #{report.id}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {report.reporter_username}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {report.reported_user_username || "N/A"}
+                  </TableCell>
                   <TableCell className="text-sm">{report.reason}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(report.status)}>
-                      {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                      {report.status.charAt(0).toUpperCase() +
+                        report.status.slice(1)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -349,11 +471,15 @@ const AdminReports = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Reporter</p>
-                  <p className="font-medium">@{selectedReport.reporter_username}</p>
+                  <p className="font-medium">
+                    @{selectedReport.reporter_username}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Reported User</p>
-                  <p className="font-medium">{selectedReport.reported_user_username || "N/A"}</p>
+                  <p className="font-medium">
+                    {selectedReport.reported_user_username || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Reason</p>
@@ -362,22 +488,30 @@ const AdminReports = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
                   <Badge className={getStatusColor(selectedReport.status)}>
-                    {selectedReport.status.charAt(0).toUpperCase() + selectedReport.status.slice(1)}
+                    {selectedReport.status.charAt(0).toUpperCase() +
+                      selectedReport.status.slice(1)}
                   </Badge>
                 </div>
               </div>
 
               {selectedReport.description && (
                 <div className="border-t pt-4">
-                  <p className="text-sm text-muted-foreground mb-2">Description</p>
-                  <p className="text-sm bg-muted p-3 rounded">{selectedReport.description}</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Description
+                  </p>
+                  <p className="text-sm bg-muted p-3 rounded">
+                    {selectedReport.description}
+                  </p>
                 </div>
               )}
 
               {selectedReport.reported_content && (
                 <div className="border-t pt-4">
                   <p className="text-sm text-muted-foreground mb-2">
-                    Reported {selectedReport.reported_content.type === "post" ? "Post" : "Comment"}
+                    Reported{" "}
+                    {selectedReport.reported_content.type === "post"
+                      ? "Post"
+                      : "Comment"}
                   </p>
                   <div className="bg-muted p-3 rounded text-sm max-h-32 overflow-y-auto">
                     {selectedReport.reported_content.content.content}
@@ -385,17 +519,24 @@ const AdminReports = () => {
                 </div>
               )}
 
-              {selectedReport.resolution_notes && selectedReport.status !== "pending" && (
-                <div className="border-t pt-4">
-                  <p className="text-sm text-muted-foreground mb-2">Resolution Notes</p>
-                  <p className="text-sm bg-green-50 dark:bg-green-950 p-3 rounded">{selectedReport.resolution_notes}</p>
-                </div>
-              )}
+              {selectedReport.resolution_notes &&
+                selectedReport.status !== "pending" && (
+                  <div className="border-t pt-4">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Resolution Notes
+                    </p>
+                    <p className="text-sm bg-green-50 dark:bg-green-950 p-3 rounded">
+                      {selectedReport.resolution_notes}
+                    </p>
+                  </div>
+                )}
 
               {/* Action Buttons */}
               {selectedReport.status === "pending" && (
                 <div className="border-t pt-4">
-                  <p className="text-sm text-muted-foreground mb-3">Moderation Actions</p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Moderation Actions
+                  </p>
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       variant="outline"
@@ -448,13 +589,21 @@ const AdminReports = () => {
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {actionType === "warn" ? "Warn User" : actionType === "suspend" ? "Suspend User" : actionType === "remove" ? "Remove Content" : "Dismiss Report"}
+              {actionType === "warn"
+                ? "Warn User"
+                : actionType === "suspend"
+                ? "Suspend User"
+                : actionType === "remove"
+                ? "Remove Content"
+                : "Dismiss Report"}
             </AlertDialogTitle>
           </AlertDialogHeader>
 
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Notes/Reason (optional)</label>
+              <label className="text-sm font-medium mb-2 block">
+                Notes/Reason (optional)
+              </label>
               <Textarea
                 placeholder="Add notes about this action..."
                 value={actionNotes}
@@ -466,11 +615,14 @@ const AdminReports = () => {
 
           <div className="flex gap-2">
             <AlertDialogCancel className="flex-1">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmAction}
-              className="flex-1"
-            >
-              {actionType === "warn" ? "Warn" : actionType === "suspend" ? "Suspend" : actionType === "remove" ? "Remove" : "Dismiss"}
+            <AlertDialogAction onClick={handleConfirmAction} className="flex-1">
+              {actionType === "warn"
+                ? "Warn"
+                : actionType === "suspend"
+                ? "Suspend"
+                : actionType === "remove"
+                ? "Remove"
+                : "Dismiss"}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>

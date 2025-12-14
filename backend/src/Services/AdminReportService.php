@@ -17,10 +17,12 @@ use App\Config\Database;
  * 
  * Database interactions: reports, users, posts, comments, admin_logs
  */
-class AdminReportService {
+class AdminReportService
+{
     private $db;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = Database::getInstance();
     }
 
@@ -34,60 +36,61 @@ class AdminReportService {
      * @param string $search Search in report content
      * @return array Reports list with pagination
      */
-    public function getAllReports($page = 1, $limit = 20, $status = 'pending', $reason = 'all', $search = '') {
+    public function getAllReports($page = 1, $limit = 20, $status = 'pending', $reason = 'all', $search = '')
+    {
         $offset = ($page - 1) * $limit;
-        
+
         try {
-            $baseQuery = 'FROM reports WHERE 1=1';
+            $baseQuery = 'WHERE 1=1';
             $params = [];
-            
+
             if ($status !== 'all') {
                 $baseQuery .= ' AND status = ?';
                 $params[] = $status;
             }
-            
+
             if ($reason !== 'all') {
                 $baseQuery .= ' AND reason = ?';
                 $params[] = $reason;
             }
-            
+
             if (!empty($search)) {
                 $baseQuery .= ' AND description LIKE ?';
                 $params[] = '%' . $search . '%';
             }
-            
+
             // Get total count
-            $countStmt = $this->db->execute('SELECT COUNT(*) as total ' . $baseQuery, $params);
+            $countStmt = $this->db->execute('SELECT COUNT(*) as total FROM reports ' . $baseQuery, $params);
             $total = (int)$countStmt->get_result()->fetch_assoc()['total'];
-            
+
             // Get paginated reports
             $query = 'SELECT r.id, r.reporter_id, r.reported_user_id, r.post_id, r.comment_id, 
-                             r.reason, r.description, r.status, r.assigned_admin_id, r.resolution_notes, 
-                             r.created_at, r.resolved_at,
+                             r.reason, r.description, r.status, r.admin_id, r.admin_notes, 
+                             r.created_at, r.updated_at,
                              ur.username as reporter_username, ur.avatar_url as reporter_avatar,
                              uu.username as reported_username, uu.avatar_url as reported_avatar,
-                             aa.username as assigned_admin_username
+                             aa.username as admin_username
                      FROM reports r
                      LEFT JOIN users ur ON r.reporter_id = ur.id
                      LEFT JOIN users uu ON r.reported_user_id = uu.id
-                     LEFT JOIN users aa ON r.assigned_admin_id = aa.id
+                     LEFT JOIN users aa ON r.admin_id = aa.id
                      ' . $baseQuery . '
                      ORDER BY 
                        CASE WHEN r.status = "pending" THEN 0 ELSE 1 END,
                        r.created_at DESC
                      LIMIT ? OFFSET ?';
-            
+
             $params[] = $limit;
             $params[] = $offset;
-            
+
             $stmt = $this->db->execute($query, $params);
             $result = $stmt->get_result();
-            
+
             $reports = [];
             while ($row = $result->fetch_assoc()) {
                 $reports[] = $row;
             }
-            
+
             return [
                 'reports' => $reports,
                 'total' => $total,
@@ -107,7 +110,8 @@ class AdminReportService {
      * @param int $reportId Report ID
      * @return array Complete report details
      */
-    public function getReportDetail($reportId) {
+    public function getReportDetail($reportId)
+    {
         try {
             $stmt = $this->db->execute(
                 'SELECT r.id, r.reporter_id, r.reported_user_id, r.post_id, r.comment_id, 
@@ -123,17 +127,17 @@ class AdminReportService {
                  WHERE r.id = ?',
                 [$reportId]
             );
-            
+
             $result = $stmt->get_result();
             if ($result->num_rows === 0) {
                 throw new \Exception('Report not found');
             }
-            
+
             $report = $result->fetch_assoc();
-            
+
             // Get reported content if applicable
             $report['reported_content'] = null;
-            
+
             if ($report['post_id']) {
                 $postStmt = $this->db->execute(
                     'SELECT p.id, p.content, p.image_url, p.created_at, u.username, u.avatar_url 
@@ -142,7 +146,7 @@ class AdminReportService {
                      WHERE p.id = ?',
                     [$report['post_id']]
                 );
-                
+
                 $postResult = $postStmt->get_result();
                 if ($postResult->num_rows > 0) {
                     $report['reported_content'] = [
@@ -158,7 +162,7 @@ class AdminReportService {
                      WHERE c.id = ?',
                     [$report['comment_id']]
                 );
-                
+
                 $commentResult = $commentStmt->get_result();
                 if ($commentResult->num_rows > 0) {
                     $report['reported_content'] = [
@@ -167,7 +171,7 @@ class AdminReportService {
                     ];
                 }
             }
-            
+
             return $report;
         } catch (\Exception $e) {
             error_log('Get report detail error: ' . $e->getMessage());
@@ -184,33 +188,34 @@ class AdminReportService {
      * @param string $resolutionNotes Notes about resolution
      * @return array Updated report data
      */
-    public function updateReportStatus($reportId, $status, $adminId, $resolutionNotes = '') {
+    public function updateReportStatus($reportId, $status, $adminId, $resolutionNotes = '')
+    {
         try {
             if (!in_array($status, ['pending', 'resolved', 'dismissed'])) {
                 throw new \Exception('Invalid status');
             }
-            
+
             $resolvedAt = ($status !== 'pending') ? date('Y-m-d H:i:s') : null;
-            
+
             $this->db->execute(
                 'UPDATE reports SET status = ?, assigned_admin_id = ?, resolution_notes = ?, resolved_at = ? 
                  WHERE id = ?',
                 [$status, $adminId, $resolutionNotes, $resolvedAt, $reportId]
             );
-            
+
             // Log admin action
             $logData = json_encode([
                 'report_id' => $reportId,
                 'new_status' => $status,
                 'notes' => $resolutionNotes
             ]);
-            
+
             $this->db->execute(
                 'INSERT INTO admin_logs (admin_id, action, target_type, target_id, details, created_at) 
                  VALUES (?, ?, ?, ?, ?, NOW())',
                 [$adminId, 'update_report_status', 'report', $reportId, $logData]
             );
-            
+
             return ['success' => true, 'message' => 'Report status updated'];
         } catch (\Exception $e) {
             error_log('Update report status error: ' . $e->getMessage());
@@ -227,10 +232,11 @@ class AdminReportService {
      * @param string $notes Resolution notes
      * @return array Success response
      */
-    public function approveReport($reportId, $adminId, $action = 'remove_content', $notes = '') {
+    public function approveReport($reportId, $adminId, $action = 'remove_content', $notes = '')
+    {
         try {
             $report = $this->getReportDetail($reportId);
-            
+
             // Take action based on type
             if ($report['post_id'] && $action === 'remove_content') {
                 // Mark post as deleted
@@ -251,10 +257,10 @@ class AdminReportService {
                     [$report['reported_user_id']]
                 );
             }
-            
+
             // Update report status
             $this->updateReportStatus($reportId, 'resolved', $adminId, $notes);
-            
+
             return ['success' => true, 'message' => 'Report approved and action taken'];
         } catch (\Exception $e) {
             error_log('Approve report error: ' . $e->getMessage());
@@ -270,7 +276,8 @@ class AdminReportService {
      * @param string $reason Reason for dismissal
      * @return array Success response
      */
-    public function dismissReport($reportId, $adminId, $reason = '') {
+    public function dismissReport($reportId, $adminId, $reason = '')
+    {
         try {
             $this->updateReportStatus($reportId, 'dismissed', $adminId, 'Dismissed: ' . $reason);
             return ['success' => true, 'message' => 'Report dismissed'];
@@ -285,28 +292,29 @@ class AdminReportService {
      * 
      * @return array Stats including pending, resolved, by reason
      */
-    public function getReportStats() {
+    public function getReportStats()
+    {
         try {
             // Total reports
             $totalStmt = $this->db->execute('SELECT COUNT(*) as total FROM reports');
             $total = (int)$totalStmt->get_result()->fetch_assoc()['total'];
-            
+
             // Pending reports
             $pendingStmt = $this->db->execute(
                 'SELECT COUNT(*) as total FROM reports WHERE status = "pending"'
             );
             $pending = (int)$pendingStmt->get_result()->fetch_assoc()['total'];
-            
+
             // Reports by reason
             $reasonStmt = $this->db->execute(
                 'SELECT reason, COUNT(*) as count FROM reports WHERE status = "pending" GROUP BY reason'
             );
-            
+
             $byReason = [];
             while ($row = $reasonStmt->get_result()->fetch_assoc()) {
                 $byReason[$row['reason']] = (int)$row['count'];
             }
-            
+
             return [
                 'total' => $total,
                 'pending' => $pending,

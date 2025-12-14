@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -47,24 +53,56 @@ const AdminLogs = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No authentication token found",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
       const params = new URLSearchParams();
       params.append("page", page.toString());
       params.append("limit", "20");
       if (actionFilter) params.append("action", actionFilter);
       if (searchQuery) params.append("search", searchQuery);
 
-      const response = await fetch(`/api/admin/logs?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await fetch(
+        `${apiUrl}/admin/logs?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
-        setLogs(data.logs);
-        setTotalPages(data.pages);
+        setLogs(Array.isArray(data.logs) ? data.logs : []);
+        setTotalPages(data.pages || 1);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Fetch logs error response:", response.status, errorData);
+        toast({
+          title: "Error",
+          description:
+            errorData.error || `Failed to fetch logs (${response.status})`,
+          variant: "destructive",
+        });
+        setLogs([]);
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch logs", variant: "destructive" });
+      console.error("Fetch logs error:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to fetch logs",
+        variant: "destructive",
+      });
+      setLogs([]);
     } finally {
       setLoading(false);
     }
@@ -126,12 +164,17 @@ const AdminLogs = () => {
             <Button type="submit">Search</Button>
           </form>
 
-          <Select value={actionFilter} onValueChange={setActionFilter}>
+          <Select
+            value={actionFilter || "all"}
+            onValueChange={(value) =>
+              setActionFilter(value === "all" ? "" : value)
+            }
+          >
             <SelectTrigger className="w-40">
               <SelectValue placeholder="All actions" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All actions</SelectItem>
+              <SelectItem value="all">All actions</SelectItem>
               {uniqueActions.map((action) => (
                 <SelectItem key={action} value={action}>
                   {action.charAt(0).toUpperCase() + action.slice(1)}
@@ -167,7 +210,10 @@ const AdminLogs = () => {
               </TableHeader>
               <TableBody>
                 {logs.map((log) => (
-                  <TableRow key={log.id} className="border-border hover:bg-muted/50">
+                  <TableRow
+                    key={log.id}
+                    className="border-border hover:bg-muted/50"
+                  >
                     <TableCell className="text-sm">
                       {formatDate(log.created_at)}
                     </TableCell>
@@ -243,43 +289,62 @@ const AdminLogs = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Timestamp</p>
-                  <p className="text-sm">{formatDate(selectedLog.created_at)}</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Timestamp
+                  </p>
+                  <p className="text-sm">
+                    {formatDate(selectedLog.created_at)}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Admin</p>
-                  <p className="text-sm font-semibold">{selectedLog.admin_username}</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Admin
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {selectedLog.admin_username}
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Action</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Action
+                  </p>
                   <Badge className={getActionColor(selectedLog.action)}>
                     {selectedLog.action}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Target Type</p>
-                  <p className="text-sm capitalize">{selectedLog.target_type}</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Target Type
+                  </p>
+                  <p className="text-sm capitalize">
+                    {selectedLog.target_type}
+                  </p>
                 </div>
               </div>
 
               {selectedLog.target_id && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Target ID</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Target ID
+                  </p>
                   <p className="text-sm">{selectedLog.target_id}</p>
                 </div>
               )}
 
-              {selectedLog.details && Object.keys(selectedLog.details).length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-2">Details</p>
-                  <div className="bg-muted p-3 rounded text-sm max-h-40 overflow-y-auto font-mono">
-                    <pre>{JSON.stringify(selectedLog.details, null, 2)}</pre>
+              {selectedLog.details &&
+                Object.keys(selectedLog.details).length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">
+                      Details
+                    </p>
+                    <div className="bg-muted p-3 rounded text-sm max-h-40 overflow-y-auto font-mono">
+                      <pre>{JSON.stringify(selectedLog.details, null, 2)}</pre>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           )}
         </DialogContent>

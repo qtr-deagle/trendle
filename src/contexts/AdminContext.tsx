@@ -14,7 +14,11 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [admin, setAdmin] = useState<{ id: string; username: string; email: string } | null>(null);
+  const [admin, setAdmin] = useState<{
+    id: string;
+    username: string;
+    email: string;
+  } | null>(null);
   const [adminLoading, setAdminLoading] = useState(true);
 
   // Check for persisted admin auth state on mount
@@ -76,7 +80,24 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
     setAdmin(data.admin);
   };
 
-  const adminLogout = () => {
+  const adminLogout = async () => {
+    const token = localStorage.getItem("adminToken");
+
+    if (token) {
+      try {
+        // Call logout endpoint to notify backend
+        await fetch(`${API_URL}/admin/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error("Logout error:", error);
+      }
+    }
+
+    // Clear local state regardless of backend response
     localStorage.removeItem("adminToken");
     setIsAdminAuthenticated(false);
     setAdmin(null);
