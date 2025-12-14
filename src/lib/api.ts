@@ -12,23 +12,10 @@ export async function apiCall(
     ? `${API_BASE_URL}${endpoint}`
     : `${API_BASE_URL}/${endpoint}`;
 
-<<<<<<< HEAD
   const response = await fetch(url, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-=======
-  // Don't set Content-Type if body is FormData (let browser set it automatically)
-  const headers: Record<string, string> = {};
-  if (!(options.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...headers,
->>>>>>> 86d481d (Finalized Project)
       ...options.headers,
     },
   });

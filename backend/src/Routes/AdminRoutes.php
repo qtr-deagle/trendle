@@ -16,7 +16,6 @@ class AdminRoutes
 
     public static function login()
     {
-<<<<<<< HEAD
         $data = json_decode(file_get_contents('php://input'), true);
 
         if (!isset($data['email']) || !isset($data['password'])) {
@@ -26,20 +25,6 @@ class AdminRoutes
         }
 
         try {
-=======
-        try {
-            $inputData = file_get_contents('php://input');
-            error_log('Admin login raw input: ' . $inputData);
-            
-            $data = json_decode($inputData, true);
-
-            if (!isset($data['email']) || !isset($data['password'])) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Email and password are required']);
-                return;
-            }
-
->>>>>>> 86d481d (Finalized Project)
             $db = Database::getInstance();
 
             // Get admin user
@@ -48,16 +33,6 @@ class AdminRoutes
                 [$data['email']]
             );
 
-<<<<<<< HEAD
-=======
-            if (!$stmt) {
-                error_log('Admin login query failed: ' . $db->getConnection()->error);
-                http_response_code(500);
-                echo json_encode(['error' => 'Database query failed']);
-                return;
-            }
-
->>>>>>> 86d481d (Finalized Project)
             $result = $stmt->get_result();
             if ($result->num_rows === 0) {
                 http_response_code(401);
@@ -87,11 +62,7 @@ class AdminRoutes
                 ]
             ]);
         } catch (\Exception $e) {
-<<<<<<< HEAD
             error_log('Admin login error: ' . $e->getMessage());
-=======
-            error_log('Admin login error: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
->>>>>>> 86d481d (Finalized Project)
             http_response_code(500);
             echo json_encode(['error' => 'Admin login failed: ' . $e->getMessage()]);
         }
@@ -1114,103 +1085,4 @@ class AdminRoutes
         $decoded = Auth::verifyToken($token);
         return $decoded['userId'] ?? null;
     }
-<<<<<<< HEAD
-=======
-
-    public static function messageUser()
-    {
-        $token = Auth::getToken();
-
-        if (!$token) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No token provided']);
-            return;
-        }
-
-        $decoded = Auth::verifyToken($token);
-        if (!$decoded) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid or expired token']);
-            return;
-        }
-
-        try {
-            $db = Database::getInstance();
-
-            // Check if user is admin
-            $adminStmt = $db->execute(
-                'SELECT is_admin FROM users WHERE id = ?',
-                [$decoded['userId']]
-            );
-            $adminResult = $adminStmt->get_result();
-            $adminUser = $adminResult->fetch_assoc();
-
-            if (!$adminUser || !$adminUser['is_admin']) {
-                http_response_code(403);
-                echo json_encode(['error' => 'Unauthorized - admin access required']);
-                return;
-            }
-
-            // Get target user ID from URL
-            $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-            error_log("[AdminMessageUser] Full path: " . $path);
-            
-            // Extract user ID from path (works with both /admin/message-user/123 and /api/admin/message-user/123)
-            if (preg_match('/message-user\/(\d+)/', $path, $matches)) {
-                $targetUserId = $matches[1];
-            } else {
-                error_log("[AdminMessageUser] Failed to extract user ID from path: " . $path);
-                http_response_code(400);
-                echo json_encode(['error' => 'Invalid user ID in path']);
-                return;
-            }
-
-            error_log("[AdminMessageUser] Extracted target user ID: " . $targetUserId);
-
-            // Verify target user exists
-            $targetStmt = $db->execute(
-                'SELECT id FROM users WHERE id = ?',
-                [$targetUserId]
-            );
-            $targetResult = $targetStmt->get_result();
-
-            if ($targetResult->num_rows === 0) {
-                http_response_code(404);
-                echo json_encode(['error' => 'Target user not found']);
-                return;
-            }
-
-            // Get message content
-            $body = json_decode(file_get_contents('php://input'), true);
-            $content = trim($body['content'] ?? '');
-
-            if (empty($content)) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Message content required']);
-                return;
-            }
-
-            // Insert message (admin can message without following)
-            $insertStmt = $db->execute(
-                'INSERT INTO messages (sender_id, recipient_id, content, created_at) VALUES (?, ?, ?, NOW())',
-                [$decoded['userId'], $targetUserId, $content]
-            );
-
-            if ($insertStmt) {
-                error_log("[AdminMessageUser] Message sent successfully");
-                http_response_code(201);
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Message sent to user'
-                ]);
-            } else {
-                throw new \Exception('Failed to insert message into database');
-            }
-        } catch (\Exception $e) {
-            error_log('Admin message user error: ' . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to send message: ' . $e->getMessage()]);
-        }
-    }
->>>>>>> 86d481d (Finalized Project)
 }

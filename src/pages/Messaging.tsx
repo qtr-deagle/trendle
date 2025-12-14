@@ -173,7 +173,6 @@ const Messaging = () => {
       <div className="flex h-[calc(100vh-120px)] gap-4">
         {/* Conversations List */}
         <div className="w-80 border-r border-border overflow-y-auto">
-<<<<<<< HEAD
           <div className="p-4 sticky top-0 bg-background/95 backdrop-blur">
             <h2 className="font-bold text-xl mb-4">Messages</h2>
             <div className="space-y-2">
@@ -184,12 +183,6 @@ const Messaging = () => {
                   Follow users to message them
                 </p>
               ) : (
-=======
-          <div className="space-y-2 p-4">
-            {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin mx-auto" />
-              ) : followers.length === 0 ? null : (
->>>>>>> 86d481d (Finalized Project)
                 followers.map((follower) => (
                   <button
                     key={follower.id}
@@ -222,10 +215,7 @@ const Messaging = () => {
                   </button>
                 ))
               )}
-<<<<<<< HEAD
             </div>
-=======
->>>>>>> 86d481d (Finalized Project)
           </div>
         </div>
 

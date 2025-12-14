@@ -253,16 +253,11 @@ class ExploreService
     /**
      * Get recommended users (trending/popular users)
      */
-<<<<<<< HEAD
     public static function getRecommendedUsers($limit = 10)
-=======
-    public static function getRecommendedUsers($limit = 10, $excludeUserId = null)
->>>>>>> 86d481d (Finalized Project)
     {
         try {
             $db = Database::getInstance();
 
-<<<<<<< HEAD
             $stmt = $db->execute(
                 'SELECT id, username, display_name, avatar_url, bio, followers
                  FROM users
@@ -270,25 +265,6 @@ class ExploreService
                  ORDER BY followers DESC
                  LIMIT ?',
                 [$limit]
-=======
-            $params = [$limit];
-            $whereClause = 'WHERE is_admin = FALSE';
-            
-            // Exclude the current user if provided
-            if ($excludeUserId) {
-                $whereClause .= ' AND id != ?';
-                // Add exclude user ID before limit
-                array_unshift($params, $excludeUserId);
-            }
-
-            $stmt = $db->execute(
-                'SELECT id, username, display_name, avatar_url, bio, followers
-                 FROM users
-                 ' . $whereClause . '
-                 ORDER BY followers DESC
-                 LIMIT ?',
-                $params
->>>>>>> 86d481d (Finalized Project)
             );
 
             $result = $stmt->get_result();

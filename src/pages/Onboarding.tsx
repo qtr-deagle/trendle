@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { useState } from "react";
-=======
-import { useState, useEffect } from "react";
->>>>>>> 86d481d (Finalized Project)
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -25,7 +21,6 @@ const avatarOptions = [
   "https://api.dicebear.com/7.x/avataaars/svg?seed=avatar10",
 ];
 
-<<<<<<< HEAD
 // Interest tags
 const interestTags = [
   "Follow all", "deletarune", "artists on tumblr", "ao3",
@@ -33,13 +28,6 @@ const interestTags = [
   "cats on whispr", "fl", "photography", "lgbtq", "pokemon",
   "my art", "illustration", "art work", "painting",
   "famous artwork from famous artists", "animation", "fanart"
-=======
-// Default interest tags as fallback
-const defaultInterestTags = [
-  "Travel", "Fitness", "Cooking", "Gaming",
-  "Reading", "Photography", "Fashion", "Nature",
-  "Technology", "Art", "Wellness", "Music"
->>>>>>> 86d481d (Finalized Project)
 ];
 
 const Onboarding = () => {
@@ -48,38 +36,8 @@ const Onboarding = () => {
   const [step, setStep] = useState(1);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
-<<<<<<< HEAD
   const [saving, setSaving] = useState(false);
 
-=======
-  const [interestTags, setInterestTags] = useState<string[]>(defaultInterestTags);
-  const [loadingInterests, setLoadingInterests] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  // Fetch interests from API (optional - use defaults if fails)
-  useEffect(() => {
-    const fetchInterests = async () => {
-      try {
-        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-        const response = await fetch(`${API_URL}/interests`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.interests && Array.isArray(data.interests) && data.interests.length > 0) {
-            setInterestTags(data.interests);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch interests from API, using defaults:", error);
-        // Default interests are already set
-      } finally {
-        setLoadingInterests(false);
-      }
-    };
-
-    fetchInterests();
-  }, []);
-
->>>>>>> 86d481d (Finalized Project)
   const handleAvatarContinue = () => {
     if (!selectedAvatar) {
       toast.error("Please select an avatar");
@@ -202,21 +160,13 @@ const Onboarding = () => {
             </p>
 
             {/* Interests Grid */}
-<<<<<<< HEAD
             <div className="w-full max-w-2xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
-=======
-            <div className="w-full max-w-4xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
->>>>>>> 86d481d (Finalized Project)
               {interestTags.map((tag) => (
                 <button
                   key={tag}
                   onClick={() => toggleInterest(tag)}
                   className={cn(
-<<<<<<< HEAD
                     "px-4 py-2 rounded-full font-medium transition-all duration-200",
-=======
-                    "px-4 py-2 rounded-full font-medium transition-all duration-200 text-sm",
->>>>>>> 86d481d (Finalized Project)
                     selectedInterests.has(tag)
                       ? "bg-primary text-primary-foreground"
                       : "border-2 border-muted-foreground text-muted-foreground hover:border-primary hover:text-primary"

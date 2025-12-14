@@ -311,11 +311,6 @@ class UserRoutes
             return;
         }
 
-<<<<<<< HEAD
-=======
-        error_log("[FollowUser] User {$decoded['userId']} attempting to follow {$targetUsername}");
-
->>>>>>> 86d481d (Finalized Project)
         try {
             $db = Database::getInstance();
             $conn = $db->getConnection();
@@ -347,10 +342,6 @@ class UserRoutes
             $checkResult = $checkStmt->get_result();
 
             if ($checkResult->num_rows > 0) {
-<<<<<<< HEAD
-=======
-                error_log("[FollowUser] User {$decoded['userId']} is already following {$targetId}");
->>>>>>> 86d481d (Finalized Project)
                 http_response_code(400);
                 echo json_encode(['error' => 'Already following this user']);
                 return;
@@ -366,10 +357,6 @@ class UserRoutes
             $conn->query("UPDATE users SET following = following + 1 WHERE id = {$decoded['userId']}");
             $conn->query("UPDATE users SET followers = followers + 1 WHERE id = {$targetId}");
 
-<<<<<<< HEAD
-=======
-            error_log("[FollowUser] Successfully followed: User {$decoded['userId']} now follows {$targetId}");
->>>>>>> 86d481d (Finalized Project)
             http_response_code(200);
             echo json_encode(['message' => 'Now following user']);
         } catch (\Exception $e) {
@@ -397,14 +384,9 @@ class UserRoutes
         }
 
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-<<<<<<< HEAD
         $pathParts = explode('/', $path);
         $parts = array_filter($pathParts);
         $targetUsername = isset($parts[2]) ? $parts[2] : null;
-=======
-        preg_match('#/user/([a-zA-Z0-9_]+)/unfollow$#', $path, $matches);
-        $targetUsername = $matches[1] ?? null;
->>>>>>> 86d481d (Finalized Project)
 
         if (!$targetUsername) {
             http_response_code(400);
@@ -412,11 +394,6 @@ class UserRoutes
             return;
         }
 
-<<<<<<< HEAD
-=======
-        error_log("[UnfollowUser] User {$decoded['userId']} attempting to unfollow {$targetUsername}");
-
->>>>>>> 86d481d (Finalized Project)
         try {
             $db = Database::getInstance();
             $conn = $db->getConnection();
@@ -444,10 +421,6 @@ class UserRoutes
             $conn->query("UPDATE users SET following = following - 1 WHERE id = {$decoded['userId']}");
             $conn->query("UPDATE users SET followers = followers - 1 WHERE id = {$targetId}");
 
-<<<<<<< HEAD
-=======
-            error_log("[UnfollowUser] Successfully unfollowed: User {$decoded['userId']} unfollowed {$targetId}");
->>>>>>> 86d481d (Finalized Project)
             http_response_code(200);
             echo json_encode(['message' => 'Unfollowed user']);
         } catch (\Exception $e) {
@@ -474,11 +447,6 @@ class UserRoutes
             return;
         }
 
-<<<<<<< HEAD
-=======
-        error_log("[GetFollowingList] User {$decoded['userId']} requesting their following list");
-
->>>>>>> 86d481d (Finalized Project)
         try {
             $db = Database::getInstance();
 
@@ -507,11 +475,6 @@ class UserRoutes
                 ];
             }
 
-<<<<<<< HEAD
-=======
-            error_log("[GetFollowingList] User {$decoded['userId']} is following " . count($following) . " users");
-            
->>>>>>> 86d481d (Finalized Project)
             http_response_code(200);
             echo json_encode([
                 'following' => $following,
@@ -551,56 +514,6 @@ class UserRoutes
         readfile($filePath);
     }
 
-<<<<<<< HEAD
-=======
-    /**
-     * Get all unique interests from users in the system
-     */
-    public static function getInterests()
-    {
-        try {
-            $db = Database::getInstance();
-
-            // Get all interests from users
-            $stmt = $db->execute(
-                'SELECT interests FROM users WHERE interests IS NOT NULL AND interests != "" AND LENGTH(interests) > 0'
-            );
-
-            $result = $stmt->get_result();
-            $allInterests = [];
-
-            // Extract and parse all interests
-            while ($row = $result->fetch_assoc()) {
-                $interests = $row['interests'];
-                if (!empty($interests)) {
-                    // Split by comma and trim each interest
-                    $userInterests = array_map('trim', explode(',', $interests));
-                    // Add each interest to our collection if not already present
-                    foreach ($userInterests as $interest) {
-                        if (!empty($interest) && !in_array($interest, $allInterests)) {
-                            $allInterests[] = $interest;
-                        }
-                    }
-                }
-            }
-
-            // Sort interests alphabetically
-            sort($allInterests);
-
-            http_response_code(200);
-            echo json_encode([
-                'success' => true,
-                'interests' => $allInterests,
-                'count' => count($allInterests)
-            ]);
-        } catch (\Exception $e) {
-            error_log('Get interests error: ' . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to fetch interests']);
-        }
-    }
-
->>>>>>> 86d481d (Finalized Project)
     // ========== POST ENDPOINTS ==========
 
     public static function getFeedPosts()
@@ -629,61 +542,6 @@ class UserRoutes
         echo json_encode($result);
     }
 
-<<<<<<< HEAD
-=======
-    public static function getAllPosts()
-    {
-        $token = Auth::getToken();
-
-        if (!$token) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No token provided']);
-            return;
-        }
-
-        $decoded = Auth::verifyToken($token);
-        if (!$decoded) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid or expired token']);
-            return;
-        }
-
-        $limit = (int)($_GET['limit'] ?? 50);
-        $offset = (int)($_GET['offset'] ?? 0);
-
-        $result = \App\Services\UserPostService::getAllPosts($limit, $offset, $decoded['userId']);
-
-        http_response_code($result['success'] ? 200 : 400);
-        echo json_encode($result);
-    }
-
-    public static function getFollowingPosts()
-    {
-        $token = Auth::getToken();
-
-        if (!$token) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No token provided']);
-            return;
-        }
-
-        $decoded = Auth::verifyToken($token);
-        if (!$decoded) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid or expired token']);
-            return;
-        }
-
-        $limit = (int)($_GET['limit'] ?? 50);
-        $offset = (int)($_GET['offset'] ?? 0);
-
-        $result = \App\Services\UserPostService::getFollowingPosts($decoded['userId'], $limit, $offset);
-
-        http_response_code($result['success'] ? 200 : 400);
-        echo json_encode($result);
-    }
-
->>>>>>> 86d481d (Finalized Project)
     public static function getUserPosts()
     {
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -755,12 +613,7 @@ class UserRoutes
         $result = \App\Services\UserPostService::createPost(
             $decoded['userId'],
             $data['content'] ?? null,
-<<<<<<< HEAD
             $data['image_url'] ?? null
-=======
-            $data['image_url'] ?? null,
-            $data['tags'] ?? []
->>>>>>> 86d481d (Finalized Project)
         );
 
         http_response_code($result['success'] ? 201 : 400);
@@ -835,36 +688,6 @@ class UserRoutes
 
     // ========== COMMUNITY ENDPOINTS ==========
 
-<<<<<<< HEAD
-=======
-    public static function createCommunity()
-    {
-        $token = Auth::getToken();
-        if (!$token) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No token provided']);
-            return;
-        }
-
-        $decoded = Auth::verifyToken($token);
-        if (!$decoded) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid or expired token']);
-            return;
-        }
-
-        $input = json_decode(file_get_contents('php://input'), true);
-        $name = $input['name'] ?? null;
-        $description = $input['description'] ?? null;
-        $avatarUrl = $input['avatarUrl'] ?? null;
-
-        $result = \App\Services\CommunityService::createCommunity($name, $description, $avatarUrl);
-
-        http_response_code($result['success'] ? 200 : 400);
-        echo json_encode($result);
-    }
-
->>>>>>> 86d481d (Finalized Project)
     public static function getAllCommunities()
     {
         $limit = (int)($_GET['limit'] ?? 20);
@@ -1213,52 +1036,9 @@ class UserRoutes
 
     public static function getRecommendedUsers()
     {
-<<<<<<< HEAD
         $limit = (int)($_GET['limit'] ?? 10);
 
         $result = \App\Services\ExploreService::getRecommendedUsers($limit);
-=======
-        $token = Auth::getToken();
-        $currentUserId = null;
-
-        // If user is authenticated, get their ID to exclude them from recommendations
-        if ($token) {
-            $decoded = Auth::verifyToken($token);
-            if ($decoded) {
-                $currentUserId = $decoded['userId'];
-            }
-        }
-
-        $limit = (int)($_GET['limit'] ?? 10);
-
-        $result = \App\Services\ExploreService::getRecommendedUsers($limit, $currentUserId);
-
-        http_response_code($result['success'] ? 200 : 400);
-        echo json_encode($result);
-    }
-
-    public static function getPostsByTags()
-    {
-        $token = Auth::getToken();
-
-        if (!$token) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No token provided']);
-            return;
-        }
-
-        $decoded = Auth::verifyToken($token);
-        if (!$decoded) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid or expired token']);
-            return;
-        }
-
-        $limit = (int)($_GET['limit'] ?? 50);
-        $offset = (int)($_GET['offset'] ?? 0);
-
-        $result = \App\Services\UserPostService::getPostsByTagsWithFollowers($decoded['userId'], $limit, $offset);
->>>>>>> 86d481d (Finalized Project)
 
         http_response_code($result['success'] ? 200 : 400);
         echo json_encode($result);
@@ -1557,177 +1337,4 @@ class UserRoutes
         http_response_code($result['success'] ? 200 : 400);
         echo json_encode($result);
     }
-<<<<<<< HEAD
-=======
-
-    /**
-     * Check if current user is following a specific user
-     */
-    public static function checkFollowStatus()
-    {
-        $token = Auth::getToken();
-
-        if (!$token) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No token provided']);
-            return;
-        }
-
-        $decoded = Auth::verifyToken($token);
-        if (!$decoded) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid or expired token']);
-            return;
-        }
-
-        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        preg_match('#/user/([a-zA-Z0-9_]+)/follow-status$#', $path, $matches);
-        $targetUsername = $matches[1] ?? null;
-
-        if (!$targetUsername) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Username required']);
-            return;
-        }
-
-        error_log("[CheckFollowStatus] User {$decoded['userId']} checking follow status for {$targetUsername}");
-
-        try {
-            $db = Database::getInstance();
-
-            // Get target user ID
-            $stmt = $db->execute('SELECT id FROM users WHERE username = ?', [$targetUsername]);
-            $result = $stmt->get_result();
-
-            if ($result->num_rows === 0) {
-                error_log("[CheckFollowStatus] Target user '{$targetUsername}' not found");
-                http_response_code(404);
-                echo json_encode(['error' => 'User not found', 'username' => $targetUsername]);
-                return;
-            }
-
-            $targetUser = $result->fetch_assoc();
-            $targetId = $targetUser['id'];
-
-            // Check if already following
-            $checkStmt = $db->execute(
-                'SELECT id FROM follows WHERE follower_id = ? AND following_id = ?',
-                [$decoded['userId'], $targetId]
-            );
-            $checkResult = $checkStmt->get_result();
-
-            $isFollowing = $checkResult->num_rows > 0;
-
-            error_log("[CheckFollowStatus] User {$decoded['userId']} isFollowing {$targetId} ({$targetUsername}): " . ($isFollowing ? 'true' : 'false'));
-            http_response_code(200);
-            echo json_encode([
-                'isFollowing' => $isFollowing,
-                'userId' => $targetId,
-                'username' => $targetUsername
-            ]);
-        } catch (\Exception $e) {
-            error_log('Check follow status error: ' . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to check follow status']);
-        }
-    }
-
-    public static function addComment()
-    {
-        $token = Auth::getToken();
-
-        if (!$token) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No token provided']);
-            return;
-        }
-
-        $decoded = Auth::verifyToken($token);
-        if (!$decoded) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid or expired token']);
-            return;
-        }
-
-        // Get post ID from URL
-        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        preg_match('#/post/(\d+)/comment$#', $path, $matches);
-        $postId = $matches[1] ?? null;
-
-        if (!$postId) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Post ID required']);
-            return;
-        }
-
-        // Get request body
-        $body = json_decode(file_get_contents('php://input'), true);
-        $content = trim($body['content'] ?? '');
-
-        if (empty($content)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Comment content required']);
-            return;
-        }
-
-        try {
-            $db = \App\Config\Database::getInstance();
-
-            // Verify post exists
-            $postStmt = $db->execute('SELECT id FROM posts WHERE id = ?', [$postId]);
-            $postResult = $postStmt->get_result();
-
-            if ($postResult->num_rows === 0) {
-                http_response_code(404);
-                echo json_encode(['error' => 'Post not found']);
-                return;
-            }
-
-            // Insert comment
-            $insertStmt = $db->execute(
-                'INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)',
-                [$postId, $decoded['userId'], $content]
-            );
-
-            if ($insertStmt) {
-                $commentId = $db->getConnection()->insert_id;
-
-                // Get comment with user details
-                $commentStmt = $db->execute(
-                    'SELECT c.id, c.content, c.created_at, u.id as user_id, u.username, u.display_name, u.avatar_url 
-                     FROM comments c 
-                     JOIN users u ON c.user_id = u.id 
-                     WHERE c.id = ?',
-                    [$commentId]
-                );
-                $commentResult = $commentStmt->get_result();
-                $row = $commentResult->fetch_assoc();
-
-                // Format comment in the same structure as getPostDetail
-                $comment = [
-                    'id' => $row['id'],
-                    'author' => [
-                        'id' => $row['user_id'],
-                        'username' => $row['username'],
-                        'display_name' => $row['display_name'],
-                        'avatar' => $row['avatar_url'] ?: "https://api.dicebear.com/7.x/avataaars/svg?seed={$row['username']}"
-                    ],
-                    'content' => $row['content'],
-                    'likes' => 0,
-                    'createdAt' => $row['created_at']
-                ];
-
-                http_response_code(201);
-                echo json_encode([
-                    'success' => true,
-                    'comment' => $comment
-                ]);
-            }
-        } catch (\Exception $e) {
-            error_log('Add comment error: ' . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to add comment: ' . $e->getMessage()]);
-        }
-    }
->>>>>>> 86d481d (Finalized Project)
 }

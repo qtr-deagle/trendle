@@ -64,15 +64,6 @@ class Router {
             UserRoutes::unfollowUser();
         } elseif (preg_match('#^/user/([a-zA-Z0-9_]+)/following$#', $path, $matches) && $method === 'GET') {
             UserRoutes::getFollowingList();
-<<<<<<< HEAD
-=======
-        } elseif (preg_match('#^/user/([a-zA-Z0-9_]+)/follow-status$#', $path, $matches) && $method === 'GET') {
-            UserRoutes::checkFollowStatus();
-        } elseif ($path === '/explore/recommended-users' && $method === 'GET') {
-            UserRoutes::getRecommendedUsers();
-        } elseif ($path === '/posts/feed' && $method === 'GET') {
-            UserRoutes::getPostsByTags();
->>>>>>> 86d481d (Finalized Project)
         } elseif (strpos($path, '/uploads/') === 0) {
             UserRoutes::serveUploadedFile();
         } else {

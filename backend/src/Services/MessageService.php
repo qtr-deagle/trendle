@@ -36,7 +36,6 @@ class MessageService
             $conversations = [];
 
             while ($row = $result->fetch_assoc()) {
-<<<<<<< HEAD
                 // Verify users follow each other
                 $followCheck = $db->execute(
                     'SELECT id FROM follows WHERE follower_id = ? AND following_id = ? LIMIT 1',
@@ -46,11 +45,6 @@ class MessageService
                 if ($followCheck->get_result()->num_rows > 0) {
                     $conversations[] = self::formatConversationRow($row);
                 }
-=======
-                // Show all conversations regardless of follow status
-                // (Admin messages and user-to-user messages both work)
-                $conversations[] = self::formatConversationRow($row);
->>>>>>> 86d481d (Finalized Project)
             }
 
             return [
@@ -119,7 +113,6 @@ class MessageService
         try {
             $db = Database::getInstance();
 
-<<<<<<< HEAD
             // Check if users follow each other
             $followCheck = $db->execute(
                 'SELECT id FROM follows WHERE follower_id = ? AND following_id = ?',
@@ -133,8 +126,6 @@ class MessageService
                 ];
             }
 
-=======
->>>>>>> 86d481d (Finalized Project)
             // Get messages
             $stmt = $db->execute(
                 'SELECT id, sender_id, recipient_id, content, is_read, created_at
@@ -201,7 +192,6 @@ class MessageService
 
             $db = Database::getInstance();
 
-<<<<<<< HEAD
             // Check if sender follows recipient
             $followCheck = $db->execute(
                 'SELECT id FROM follows WHERE follower_id = ? AND following_id = ?',
@@ -215,8 +205,6 @@ class MessageService
                 ];
             }
 
-=======
->>>>>>> 86d481d (Finalized Project)
             // Check if recipient exists
             $recipientCheck = $db->execute(
                 'SELECT id FROM users WHERE id = ?',
@@ -317,7 +305,6 @@ class MessageService
         try {
             $db = Database::getInstance();
 
-<<<<<<< HEAD
             // Verify users follow each other
             $followCheck = $db->execute(
                 'SELECT id FROM follows WHERE follower_id = ? AND following_id = ?',
@@ -330,9 +317,6 @@ class MessageService
                     'error' => 'You must follow this user to view messages'
                 ];
             }
-=======
-            // Get all messages
->>>>>>> 86d481d (Finalized Project)
 
             $stmt = $db->execute(
                 'SELECT id, sender_id, recipient_id, content, is_read, created_at
