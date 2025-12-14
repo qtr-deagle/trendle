@@ -34,6 +34,20 @@ const Signup = () => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    // Validate blog name (username)
+    const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+    if (!usernameRegex.test(blogName)) {
+      toast.error("Blog name must be 3-30 characters and contain only letters, numbers, and underscores");
+      return;
+    }
+
     if (!agreedToTerms) {
       toast.error("Please agree to the Terms of Service");
       return;

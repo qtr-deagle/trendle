@@ -16,6 +16,20 @@ class AuthRoutes {
             return;
         }
 
+        // Validate email
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid email address']);
+            return;
+        }
+
+        // Validate username (alphanumeric and underscore only)
+        if (!preg_match('/^[a-zA-Z0-9_]{3,30}$/', $data['username'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Username must be 3-30 characters and contain only letters, numbers, and underscores']);
+            return;
+        }
+
         if (strlen($data['password']) < 6) {
             http_response_code(400);
             echo json_encode(['error' => 'Password must be at least 6 characters']);
@@ -116,6 +130,58 @@ class AuthRoutes {
         } catch (\Exception $e) {
             http_response_code(500);
             echo json_encode(['error' => 'Login failed']);
+        }
+    }
+
+    public static function adminLogin() {
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($data['email']) || !isset($data['password'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Email and password are required']);
+            return;
+        }
+
+        try {
+            $db = Database::getInstance();
+
+            // Get admin user
+            $stmt = $db->execute(
+                'SELECT id, username, email, password, is_admin FROM users WHERE email = ? AND is_admin = 1',
+                [$data['email']]
+            );
+
+            $result = $stmt->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Invalid admin credentials']);
+                return;
+            }
+
+            $user = $result->fetch_assoc();
+
+            // Verify password
+            if (!password_verify($data['password'], $user['password'])) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Invalid admin credentials']);
+                return;
+            }
+
+            $token = Auth::generateToken($user['id']);
+
+            http_response_code(200);
+            echo json_encode([
+                'token' => $token,
+                'user' => [
+                    'id' => $user['id'],
+                    'username' => $user['username'],
+                    'email' => $user['email'],
+                    'is_admin' => $user['is_admin']
+                ]
+            ]);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Admin login failed']);
         }
     }
 

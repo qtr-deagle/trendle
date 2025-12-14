@@ -41,7 +41,7 @@ interface AccountProps {
 }
 
 const Account = ({ useViewSwitching }: AccountProps) => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("posts");
   const [userAvatar, setUserAvatar] = useState(user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`);
@@ -51,6 +51,13 @@ const Account = ({ useViewSwitching }: AccountProps) => {
   const [loadingFollowing, setLoadingFollowing] = useState(false);
   const [loadingTags, setLoadingTags] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync avatar when user changes
+  useEffect(() => {
+    if (user?.avatar) {
+      setUserAvatar(user.avatar);
+    }
+  }, [user?.avatar]);
 
   // Fetch following users
   useEffect(() => {

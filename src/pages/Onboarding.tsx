@@ -32,7 +32,7 @@ const interestTags = [
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [step, setStep] = useState(1);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
@@ -77,6 +77,16 @@ const Onboarding = () => {
 
       if (!response.ok) {
         throw new Error("Failed to save profile");
+      }
+
+      const data = await response.json();
+      
+      // Update the user in AuthContext with the returned data
+      if (data.user) {
+        updateUser({
+          avatar_url: data.user.avatar_url,
+          interests: data.user.interests,
+        });
       }
 
       toast.success("Profile setup complete!");

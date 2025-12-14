@@ -17,6 +17,7 @@ import LandingCommunities from "./pages/LandingCommunities";
 import Profile from "./pages/Profile";
 import CommunityDetail from "./pages/CommunityDetail";
 import CreateCommunity from "./pages/CreateCommunity";
+import CreatePost from "./pages/CreatePost";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -92,6 +93,7 @@ const AppContent = () => (
     <Route path="/dashboard/settings" element={<ProtectedRoute><DashboardRoutes /></ProtectedRoute>} />
 
     {/* Other Protected Routes */}
+    <Route path="/create" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
     <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
     <Route path="/communities/create" element={<ProtectedRoute><CreateCommunity /></ProtectedRoute>} />
     <Route path="/communities/:handle" element={<ProtectedRoute><CommunityDetail /></ProtectedRoute>} />

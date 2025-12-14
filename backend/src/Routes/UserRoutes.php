@@ -1,4 +1,4 @@
-`<?php
+<?php
 
 namespace App\Routes;
 
@@ -154,8 +154,27 @@ class UserRoutes {
 
             $db->execute($sql, $params);
 
+            // Fetch and return the updated user profile
+            $stmt = $db->execute(
+                'SELECT id, username, email, display_name, bio, avatar_url, interests, followers, following FROM users WHERE id = ?',
+                [$decoded['userId']]
+            );
+
+            $result = $stmt->get_result();
+            $updatedUser = $result->fetch_assoc();
+
+            // Parse interests if they exist
+            if ($updatedUser['interests']) {
+                $updatedUser['interests'] = array_map('trim', explode(',', $updatedUser['interests']));
+            } else {
+                $updatedUser['interests'] = [];
+            }
+
             http_response_code(200);
-            echo json_encode(['message' => 'Profile updated successfully']);
+            echo json_encode([
+                'message' => 'Profile updated successfully',
+                'user' => $updatedUser
+            ]);
         } catch (\Exception $e) {
             error_log('Update profile error: ' . $e->getMessage());
             http_response_code(500);

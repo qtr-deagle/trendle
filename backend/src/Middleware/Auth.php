@@ -64,13 +64,25 @@ class Auth {
     }
 
     public static function getToken() {
-        $headers = getallheaders();
-        if (isset($headers['Authorization'])) {
-            $auth = $headers['Authorization'];
+        // Try getallheaders() first (Apache/Nginx)
+        if (function_exists('getallheaders')) {
+            $headers = getallheaders();
+            if (isset($headers['Authorization'])) {
+                $auth = $headers['Authorization'];
+                if (preg_match('/Bearer\s+(.*)$/i', $auth, $matches)) {
+                    return $matches[1];
+                }
+            }
+        }
+        
+        // Fallback to $_SERVER for other cases
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $auth = $_SERVER['HTTP_AUTHORIZATION'];
             if (preg_match('/Bearer\s+(.*)$/i', $auth, $matches)) {
                 return $matches[1];
             }
         }
+        
         return null;
     }
 }

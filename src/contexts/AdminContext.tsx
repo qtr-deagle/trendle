@@ -37,8 +37,13 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setIsAdminAuthenticated(true);
-        setAdmin(data.admin);
+        if (data.admin) {
+          setIsAdminAuthenticated(true);
+          setAdmin(data.admin);
+        } else {
+          // User is not an admin
+          localStorage.removeItem("adminToken");
+        }
       } else {
         // Token is invalid, clear it
         localStorage.removeItem("adminToken");

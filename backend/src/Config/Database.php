@@ -43,6 +43,7 @@ class Database {
         $stmt = $this->connection->prepare($sql);
         
         if (!$stmt) {
+            error_log('Prepare failed: ' . $this->connection->error . ' SQL: ' . $sql);
             throw new \Exception('Prepare failed: ' . $this->connection->error);
         }
 
@@ -55,10 +56,14 @@ class Database {
                 else $types .= 's';
             }
 
-            $stmt->bind_param($types, ...$params);
+            if (!$stmt->bind_param($types, ...$params)) {
+                error_log('Bind failed: ' . $stmt->error);
+                throw new \Exception('Bind failed: ' . $stmt->error);
+            }
         }
 
         if (!$stmt->execute()) {
+            error_log('Execute failed: ' . $stmt->error . ' SQL: ' . $sql);
             throw new \Exception('Execute failed: ' . $stmt->error);
         }
 

@@ -25,12 +25,13 @@ class Router {
         // Set JWT secret
         Auth::setSecret(getenv('JWT_SECRET') ?: 'your_jwt_secret_key');
 
-        // Run migrations
-        self::runMigrations();
+        // Run migrations (disabled for now - migrations run on first request)
+        // self::runMigrations();
 
         // Parse URL
-        $method = $_SERVER['REQUEST_METHOD'];
-        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        $path = parse_url($uri, PHP_URL_PATH);
         $path = str_replace('/api', '', $path);
         $path = rtrim($path, '/');
 

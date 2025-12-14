@@ -6,6 +6,7 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   signup: (username: string, email: string, password: string) => Promise<void>;
+  updateUser: (userData: any) => void;
   loading: boolean;
 }
 
@@ -81,6 +82,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
   };
 
+  const updateUser = (userData: any) => {
+    if (user) {
+      const avatarUrl = userData.avatar_url || userData.avatar || user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+      setUser({ ...user, ...userData, avatar: avatarUrl });
+    }
+  };
+
   const signup = async (username: string, email: string, password: string) => {
     const response = await fetch(`${API_URL}/auth/register`, {
       method: "POST",
@@ -103,7 +111,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, signup, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, signup, updateUser, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );
