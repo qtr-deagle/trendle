@@ -134,15 +134,10 @@ const CreatePost = () => {
       const newTag = tagInput.trim().toLowerCase();
       if (!tags.includes(newTag)) {
         setTags([...tags, newTag]);
-<<<<<<< HEAD
-      }
-      setTagInput("");
-=======
         setTagInput("");
       } else {
         toast.error("This tag already exists");
       }
->>>>>>> 86d481d (Finalized Project)
     }
   };
 
@@ -214,20 +209,12 @@ const CreatePost = () => {
           Create a new post with text, images, or video
         </DialogDescription>
         {/* Header with User Info */}
-<<<<<<< HEAD
-        <DialogHeader className="flex items-center gap-4 pb-4 border-b border-sidebar-border">
-=======
         <DialogHeader className="flex flex-col items-center gap-3 pb-4 border-b border-sidebar-border">
->>>>>>> 86d481d (Finalized Project)
           <Avatar className="w-12 h-12">
             <AvatarImage src={user?.avatar} alt={user?.username} />
             <AvatarFallback>{user?.username?.[0].toUpperCase()}</AvatarFallback>
           </Avatar>
-<<<<<<< HEAD
-          <div>
-=======
           <div className="text-center">
->>>>>>> 86d481d (Finalized Project)
             <p className="font-semibold text-foreground">{user?.username}</p>
             <p className="text-xs text-muted-foreground">Share your thoughts</p>
           </div>
@@ -289,23 +276,16 @@ const CreatePost = () => {
 
           {/* Tags Input */}
           <div className="space-y-2">
-<<<<<<< HEAD
-=======
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium">Tags</label>
               <span className="text-xs text-muted-foreground">{tags.length}</span>
             </div>
->>>>>>> 86d481d (Finalized Project)
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 #
               </span>
               <Input
-<<<<<<< HEAD
-                placeholder="add tags"
-=======
                 placeholder="add tags (press Enter)"
->>>>>>> 86d481d (Finalized Project)
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleAddTag}

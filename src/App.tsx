@@ -26,10 +26,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminMessages from "./pages/admin/AdminMessages";
-<<<<<<< HEAD
-=======
 import AdminUserMessaging from "./pages/admin/AdminUserMessaging";
->>>>>>> 86d481d (Finalized Project)
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminTags from "./pages/admin/AdminTags";
 import AdminLogs from "./pages/admin/AdminLogs";
@@ -45,22 +42,7 @@ const DashboardRoutes = () => (
 
 // Protected routes that require authentication
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-<<<<<<< HEAD
   const { isAuthenticated } = useAuth();
-=======
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
->>>>>>> 86d481d (Finalized Project)
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -285,8 +267,6 @@ const AppContent = () => (
       }
     />
     <Route
-<<<<<<< HEAD
-=======
       path="/admin/message-users"
       element={
         <AdminRoute>
@@ -295,7 +275,6 @@ const AppContent = () => (
       }
     />
     <Route
->>>>>>> 86d481d (Finalized Project)
       path="/admin/categories"
       element={
         <AdminRoute>
@@ -325,10 +304,6 @@ const AppContent = () => (
   </Routes>
 );
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 86d481d (Finalized Project)
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -336,17 +311,11 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-<<<<<<< HEAD
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
-=======
           <ViewProvider>
             <BrowserRouter>
               <AppContent />
             </BrowserRouter>
           </ViewProvider>
->>>>>>> 86d481d (Finalized Project)
         </TooltipProvider>
       </AdminProvider>
     </AuthProvider>

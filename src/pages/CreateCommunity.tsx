@@ -8,10 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { X, Plus } from "lucide-react";
 import { toast } from "sonner";
-<<<<<<< HEAD
-=======
 import { apiCallWithAuth } from "@/lib/api";
->>>>>>> 86d481d (Finalized Project)
 
 const CreateCommunity = () => {
   const navigate = useNavigate();
@@ -21,10 +18,7 @@ const CreateCommunity = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [privacy, setPrivacy] = useState("public");
-<<<<<<< HEAD
-=======
   const [isLoading, setIsLoading] = useState(false);
->>>>>>> 86d481d (Finalized Project)
 
   const handleLogout = () => {
     navigate("/");
@@ -41,19 +35,11 @@ const CreateCommunity = () => {
     setTags(tags.filter((_, i) => i !== index));
   };
 
-<<<<<<< HEAD
-  const handleSubmit = () => {
-=======
   const handleSubmit = async () => {
->>>>>>> 86d481d (Finalized Project)
     if (!title.trim() || !handle.trim() || !tagline.trim() || tags.length === 0) {
       toast.error("Please fill in all required fields and add at least one tag.");
       return;
     }
-<<<<<<< HEAD
-    toast.success("Community created successfully!");
-    navigate("/communities");
-=======
 
     setIsLoading(true);
     try {
@@ -95,7 +81,6 @@ const CreateCommunity = () => {
     } finally {
       setIsLoading(false);
     }
->>>>>>> 86d481d (Finalized Project)
   };
 
   return (

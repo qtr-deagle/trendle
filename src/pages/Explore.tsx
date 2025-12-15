@@ -6,10 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { apiCallWithAuth, API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-<<<<<<< HEAD
-=======
 import FollowButton from "@/components/FollowButton";
->>>>>>> 86d481d (Finalized Project)
 import { toast } from "sonner";
 
 interface Category {
@@ -190,26 +187,11 @@ const Explore = ({ useViewSwitching = false }: ExploreProps) => {
                 {searchResults.users.map((user) => (
                   <div
                     key={user.id}
-<<<<<<< HEAD
-                    onClick={() => navigate(`/profile/${user.username}`)}
-                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
-=======
                     className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted transition-colors border border-border/50"
->>>>>>> 86d481d (Finalized Project)
                   >
                     <img
                       src={user.avatar}
                       alt={user.username}
-<<<<<<< HEAD
-                      className="w-10 h-10 rounded-full"
-                    />
-                    <div className="flex-1">
-                      <p className="font-semibold">{user.display_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        @{user.username}
-                      </p>
-                    </div>
-=======
                       className="w-10 h-10 rounded-full cursor-pointer hover:opacity-80"
                       onClick={() => navigate(`/profile/${user.username}`)}
                     />
@@ -232,7 +214,6 @@ const Explore = ({ useViewSwitching = false }: ExploreProps) => {
                       size="sm"
                       showIcon={false}
                     />
->>>>>>> 86d481d (Finalized Project)
                   </div>
                 ))}
               </div>
@@ -308,11 +289,7 @@ const Explore = ({ useViewSwitching = false }: ExploreProps) => {
                     <Button
                       key={tag.id}
                       variant="outline"
-<<<<<<< HEAD
-                      onClick={() => navigate(`/tag/${tag.slug}/posts`)}
-=======
                       onClick={() => setSearchQuery(tag.name)}
->>>>>>> 86d481d (Finalized Project)
                       className="rounded-full"
                     >
                       #{tag.name}

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { useState } from "react";
-=======
 import { useState, useEffect } from "react";
->>>>>>> 86d481d (Finalized Project)
 import { Search } from "lucide-react";
 import LandingLayout from "@/components/layout/LandingLayout";
 import { Input } from "@/components/ui/input";
@@ -36,8 +32,6 @@ const trendingCategories = [
 const LandingExplore = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-<<<<<<< HEAD
-=======
   const [availableInterests, setAvailableInterests] = useState<string[]>([]);
   const [loadingInterests, setLoadingInterests] = useState(true);
 
@@ -62,7 +56,6 @@ const LandingExplore = () => {
 
     fetchInterests();
   }, []);
->>>>>>> 86d481d (Finalized Project)
 
   const toggleInterest = (interest: string) => {
     setSelectedInterests((prev) =>
@@ -95,16 +88,6 @@ const LandingExplore = () => {
               Follow tags & topics you want to see...
             </p>
 
-<<<<<<< HEAD
-            {/* Interest bubbles placeholder */}
-            <div className="flex flex-wrap gap-2 mb-8">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="w-16 h-10 border-2 border-dashed border-muted rounded-full"
-                />
-              ))}
-=======
             {/* Interest bubbles */}
             <div className="flex flex-wrap gap-2 mb-8">
               {loadingInterests ? (
@@ -129,7 +112,6 @@ const LandingExplore = () => {
                   </button>
                 ))
               )}
->>>>>>> 86d481d (Finalized Project)
             </div>
 
             <Button variant="hero" size="lg">

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { useState, useRef, useEffect } from "react";
-=======
 import { useState, useRef, useEffect, useCallback } from "react";
->>>>>>> 86d481d (Finalized Project)
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
@@ -41,14 +37,10 @@ interface FollowingUser {
   username: string;
   display_name: string;
   avatar_url?: string;
-<<<<<<< HEAD
-  bio?: string;
-=======
   avatar?: string;
   bio?: string;
   followers?: number;
   following?: number;
->>>>>>> 86d481d (Finalized Project)
 }
 
 interface UserPost {
@@ -94,8 +86,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
-<<<<<<< HEAD
-=======
   const [editingInterests, setEditingInterests] = useState(false);
   const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
   const [availableTags, setAvailableTags] = useState<string[]>([
@@ -104,7 +94,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     "Technology", "Art", "Wellness", "Music"
   ]);
   const [savingInterests, setSavingInterests] = useState(false);
->>>>>>> 86d481d (Finalized Project)
   const [editDisplayName, setEditDisplayName] = useState(
     user?.displayName || ""
   );
@@ -136,13 +125,10 @@ const Account = ({ useViewSwitching }: AccountProps) => {
           setProfile(data.user);
           setEditDisplayName(data.user.display_name || "");
           setEditBio(data.user.bio || "");
-<<<<<<< HEAD
-=======
           // Update avatar if available
           if (data.user.avatar_url) {
             setUserAvatar(data.user.avatar_url);
           }
->>>>>>> 86d481d (Finalized Project)
         }
       }
     } catch (error) {
@@ -183,40 +169,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     }
   }, [user?.avatar]);
 
-<<<<<<< HEAD
-  // Fetch following users
-  useEffect(() => {
-    const fetchFollowing = async () => {
-      if (activeTab !== "following") return;
-
-      setLoadingFollowing(true);
-      try {
-        const token = localStorage.getItem("token");
-
-        const response = await apiCallWithAuth(
-          `/user/${user?.username}/following`,
-          {
-            method: "GET",
-          },
-          token
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setFollowingUsers(data.following || []);
-        }
-      } catch (error) {
-        console.error("Error fetching following:", error);
-      } finally {
-        setLoadingFollowing(false);
-      }
-    };
-
-    if (activeTab === "following") {
-      fetchFollowing();
-    }
-  }, [activeTab, user?.username]);
-=======
   // Fetch following list
   const fetchFollowing = useCallback(async () => {
     if (activeTab !== "following") return;
@@ -292,7 +244,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
       return () => clearTimeout(timer);
     }
   }, [activeTab, fetchFollowing]);
->>>>>>> 86d481d (Finalized Project)
 
   // Fetch user tags
   useEffect(() => {
@@ -390,11 +341,8 @@ const Account = ({ useViewSwitching }: AccountProps) => {
       if (updateUser) {
         updateUser({ ...user!, avatar: data.avatar_url });
       }
-<<<<<<< HEAD
-=======
       // Refetch profile to ensure avatar is persisted
       await fetchProfileStats();
->>>>>>> 86d481d (Finalized Project)
       toast.success("Avatar updated successfully!");
     } catch (error) {
       console.error("Avatar upload error:", error);
@@ -409,8 +357,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     }
   };
 
-<<<<<<< HEAD
-=======
   const handleEditInterestsOpen = () => {
     setSelectedInterests(new Set(userTags));
     setEditingInterests(true);
@@ -459,7 +405,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     }
   };
 
->>>>>>> 86d481d (Finalized Project)
   const handleEditProfile = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -496,8 +441,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     }
   };
 
-<<<<<<< HEAD
-=======
   const handleUnfollow = async (targetUsername: string, targetId: number) => {
     try {
       const token = localStorage.getItem("token");
@@ -538,7 +481,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     }
   };
 
->>>>>>> 86d481d (Finalized Project)
   const mockPosts = userPosts.map((post) => ({
     id: post.id.toString(),
     author: {
@@ -559,8 +501,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     navigate("/");
   };
 
-<<<<<<< HEAD
-=======
   const refetchFollowing = async () => {
     if (!user?.username) return;
     
@@ -584,7 +524,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
     }
   };
 
->>>>>>> 86d481d (Finalized Project)
   const content = (
     <div className="max-w-3xl mx-auto">
       {/* Cover Image */}
@@ -613,15 +552,11 @@ const Account = ({ useViewSwitching }: AccountProps) => {
               </AvatarFallback>
             </Avatar>
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-<<<<<<< HEAD
-              <Upload className="w-6 h-6 text-white" />
-=======
               {uploading ? (
                 <Loader2 className="w-6 h-6 text-white animate-spin" />
               ) : (
                 <Upload className="w-6 h-6 text-white" />
               )}
->>>>>>> 86d481d (Finalized Project)
             </div>
           </button>
           <input
@@ -777,10 +712,7 @@ const Account = ({ useViewSwitching }: AccountProps) => {
                         <AvatarImage
                           src={
                             followUser.avatar_url ||
-<<<<<<< HEAD
-=======
                             followUser.avatar ||
->>>>>>> 86d481d (Finalized Project)
                             `https://api.dicebear.com/7.x/avataaars/svg?seed=${followUser.username}`
                           }
                           alt={followUser.display_name}
@@ -818,10 +750,7 @@ const Account = ({ useViewSwitching }: AccountProps) => {
                       variant="outline"
                       size="sm"
                       className="gap-2 ml-2 shrink-0"
-<<<<<<< HEAD
-=======
                       onClick={() => handleUnfollow(followUser.username, followUser.id)}
->>>>>>> 86d481d (Finalized Project)
                     >
                       <UserMinus className="w-4 h-4" />
                       <span className="hidden sm:inline">Following</span>
@@ -881,11 +810,7 @@ const Account = ({ useViewSwitching }: AccountProps) => {
 
                 <Button
                   variant="outline"
-<<<<<<< HEAD
-                  onClick={() => navigate("/onboarding")}
-=======
                   onClick={handleEditInterestsOpen}
->>>>>>> 86d481d (Finalized Project)
                   className="mt-8"
                 >
                   Edit Interests
@@ -902,11 +827,7 @@ const Account = ({ useViewSwitching }: AccountProps) => {
                   similar users
                 </p>
                 <Button
-<<<<<<< HEAD
-                  onClick={() => navigate("/onboarding")}
-=======
                   onClick={handleEditInterestsOpen}
->>>>>>> 86d481d (Finalized Project)
                   className="gap-2"
                 >
                   <Tag className="w-4 h-4" />
@@ -974,8 +895,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
           </div>
         </div>
       )}
-<<<<<<< HEAD
-=======
 
       {/* Edit Interests Modal */}
       {editingInterests && (
@@ -1035,7 +954,6 @@ const Account = ({ useViewSwitching }: AccountProps) => {
           </div>
         </div>
       )}
->>>>>>> 86d481d (Finalized Project)
     </div>
   );
 

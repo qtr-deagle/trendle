@@ -167,13 +167,10 @@ try {
     // ========== POST ROUTES ==========
     elseif ($path === '/posts/feed' && $method === 'GET') {
         \App\Routes\UserRoutes::getFeedPosts();
-<<<<<<< HEAD
-=======
     } elseif ($path === '/posts/all' && $method === 'GET') {
         \App\Routes\UserRoutes::getAllPosts();
     } elseif ($path === '/posts/following' && $method === 'GET') {
         \App\Routes\UserRoutes::getFollowingPosts();
->>>>>>> 86d481d (Finalized Project)
     } elseif (preg_match('#^/user/([a-zA-Z0-9_]+)/posts$#', $path) && $method === 'GET') {
         \App\Routes\UserRoutes::getUserPosts();
     } elseif (preg_match('#^/post/(\d+)$#', $path) && $method === 'GET') {
@@ -244,11 +241,8 @@ try {
         \App\Routes\UserRoutes::followUser();
     } elseif (preg_match('#^/user/([a-zA-Z0-9_]+)/unfollow$#', $path) && $method === 'POST') {
         \App\Routes\UserRoutes::unfollowUser();
-<<<<<<< HEAD
-=======
     } elseif (preg_match('#^/user/([a-zA-Z0-9_]+)/follow-status$#', $path) && $method === 'GET') {
         \App\Routes\UserRoutes::checkFollowStatus();
->>>>>>> 86d481d (Finalized Project)
     } elseif ($path === '/user/following' && $method === 'GET') {
         \App\Routes\UserRoutes::getFollowingList();
     }

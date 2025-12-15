@@ -28,8 +28,6 @@ interface PostCardProps {
   reposts: number;
   createdAt: string;
   isLiked?: boolean;
-<<<<<<< HEAD
-=======
   matchingFollowers?: Array<{
     id: number;
     username: string;
@@ -37,7 +35,6 @@ interface PostCardProps {
     avatar: string;
     matching_tags: string[];
   }>;
->>>>>>> 86d481d (Finalized Project)
   onDelete?: () => void;
 }
 
@@ -51,10 +48,7 @@ const PostCard = ({
   comments,
   reposts,
   isLiked = false,
-<<<<<<< HEAD
-=======
   matchingFollowers,
->>>>>>> 86d481d (Finalized Project)
   onDelete,
 }: PostCardProps) => {
   const navigate = useNavigate();
@@ -65,11 +59,8 @@ const PostCard = ({
 
   const isOwner = user?.id === author.id;
 
-<<<<<<< HEAD
-=======
   console.log('[PostCard] Received hashtags:', hashtags, 'Length:', hashtags?.length);
 
->>>>>>> 86d481d (Finalized Project)
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this post?")) return;
 
@@ -200,8 +191,6 @@ const PostCard = ({
         </div>
       )}
 
-<<<<<<< HEAD
-=======
       {/* Matching Followers */}
       {matchingFollowers && matchingFollowers.length > 0 && (
         <div className="mb-4 p-3 bg-muted/50 rounded-lg">
@@ -234,7 +223,6 @@ const PostCard = ({
         </div>
       )}
 
->>>>>>> 86d481d (Finalized Project)
       {/* Interactions */}
       <div className="flex items-center gap-6 pt-4 border-t border-border">
         <Button

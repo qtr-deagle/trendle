@@ -13,10 +13,7 @@ import {
   Smile,
   Heart,
   Loader2,
-<<<<<<< HEAD
-=======
   Mail,
->>>>>>> 86d481d (Finalized Project)
 } from "lucide-react";
 import { apiCallWithAuth } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -199,53 +196,16 @@ const Inbox = ({ useViewSwitching = false }: InboxProps) => {
   };
 
   const content = (
-<<<<<<< HEAD
-    <div className="flex h-[calc(100vh-2rem)] gap-0 -mx-4 -my-6">
-      {/* Conversations List */}
-      <div className="w-80 border-r border-border flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <h1 className="text-xl font-bold text-foreground">Messages</h1>
-          <Button variant="ghost" size="icon">
-            <PenSquare className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* Search */}
-        <div className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search messages..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-=======
     <div className="flex h-full gap-0">
       {/* Conversations List */}
       <div className="w-80 border-r border-border flex flex-col">
->>>>>>> 86d481d (Finalized Project)
         {/* Conversations */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
-<<<<<<< HEAD
-          ) : conversations.length === 0 ? (
-            <div className="text-center py-12 px-4">
-              <p className="text-muted-foreground text-sm">
-                No messages yet. Follow users to start messaging!
-              </p>
-            </div>
-          ) : (
-=======
           ) : conversations.length === 0 ? null : (
->>>>>>> 86d481d (Finalized Project)
             conversations.map((conversation) => (
               <div
                 key={conversation.id}
@@ -321,49 +281,15 @@ const Inbox = ({ useViewSwitching = false }: InboxProps) => {
           </div>
 
           {/* Messages */}
-<<<<<<< HEAD
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col">
-            {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">
-                  No messages yet. Start the conversation!
-                </p>
-=======
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background">
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <p className="text-muted-foreground">No messages yet</p>
->>>>>>> 86d481d (Finalized Project)
               </div>
             ) : (
               messages.map((message) => (
                 <div
                   key={message.id}
-<<<<<<< HEAD
-                  className={cn(
-                    "flex",
-                    message.senderId === user?.id
-                      ? "justify-end"
-                      : "justify-start"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "max-w-xs lg:max-w-md px-4 py-2 rounded-2xl",
-                      message.senderId === user?.id
-                        ? "bg-primary text-primary-foreground rounded-br-none"
-                        : "bg-secondary text-foreground rounded-bl-none"
-                    )}
-                  >
-                    <p className="break-words">{message.content}</p>
-                    <p
-                      className={cn(
-                        "text-xs mt-1",
-                        message.senderId === user?.id
-                          ? "text-primary-foreground/70"
-                          : "text-muted-foreground"
-                      )}
-=======
                   className={`flex ${
                     message.senderId === user?.id ? "justify-end" : "justify-start"
                   }`}
@@ -382,7 +308,6 @@ const Inbox = ({ useViewSwitching = false }: InboxProps) => {
                           ? "text-blue-100"
                           : "text-muted-foreground"
                       }`}
->>>>>>> 86d481d (Finalized Project)
                     >
                       {formatTime(message.createdAt)}
                     </p>
@@ -445,10 +370,6 @@ const Inbox = ({ useViewSwitching = false }: InboxProps) => {
           </div>
         </div>
       ) : (
-<<<<<<< HEAD
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-          <p>Select a conversation to start messaging</p>
-=======
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
             <div className="flex justify-center">
@@ -458,7 +379,6 @@ const Inbox = ({ useViewSwitching = false }: InboxProps) => {
             </div>
             <p className="text-lg text-muted-foreground">You have no message</p>
           </div>
->>>>>>> 86d481d (Finalized Project)
         </div>
       )}
     </div>

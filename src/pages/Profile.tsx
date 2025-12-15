@@ -1,22 +1,10 @@
-<<<<<<< HEAD
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-=======
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
->>>>>>> 86d481d (Finalized Project)
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import PostCard from "@/components/post/PostCard";
-<<<<<<< HEAD
-import { MoreHorizontal } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-const tabs = ["Posts", "Likes", "Following"];
-
-=======
 import FollowButton from "@/components/FollowButton";
 import { apiCallWithAuth } from "@/lib/api";
 import { MoreHorizontal, Loader2, UserMinus, Users } from "lucide-react";
@@ -35,7 +23,6 @@ interface FollowingUser {
   following?: number;
 }
 
->>>>>>> 86d481d (Finalized Project)
 const mockUserPosts = [
   {
     id: "1",
@@ -54,10 +41,6 @@ const mockUserPosts = [
 
 const Profile = () => {
   const navigate = useNavigate();
-<<<<<<< HEAD
-  const [activeTab, setActiveTab] = useState("Posts");
-  const [isFollowing, setIsFollowing] = useState(false);
-=======
   const { user } = useAuth();
   const { username } = useParams<{ username: string }>();
   const [activeTab, setActiveTab] = useState("Posts");
@@ -128,7 +111,6 @@ const Profile = () => {
       toast.error(error instanceof Error ? error.message : "Failed to unfollow user");
     }
   };
->>>>>>> 86d481d (Finalized Project)
 
   const handleLogout = () => {
     navigate("/");
@@ -152,38 +134,20 @@ const Profile = () => {
         <div className="px-6 pb-6">
           <div className="relative -mt-16 mb-4">
             <Avatar className="w-32 h-32 border-4 border-background">
-<<<<<<< HEAD
-              <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=lolaremedios" />
-              <AvatarFallback>LR</AvatarFallback>
-=======
               <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profileUsername}`} />
               <AvatarFallback>{displayName[0]}</AvatarFallback>
->>>>>>> 86d481d (Finalized Project)
             </Avatar>
           </div>
 
           <div className="flex items-start justify-between mb-4">
             <div>
-<<<<<<< HEAD
-              <h1 className="text-2xl font-bold">@lolaremedios</h1>
-=======
               <h1 className="text-2xl font-bold">@{profileUsername}</h1>
->>>>>>> 86d481d (Finalized Project)
               <p className="text-muted-foreground mt-2">
                 baka lamig lang yan i-lola remedios mo na yan
               </p>
             </div>
             <div className="flex items-center gap-2">
-<<<<<<< HEAD
-              <Button
-                variant={isFollowing ? "outline" : "hero"}
-                onClick={() => setIsFollowing(!isFollowing)}
-              >
-                {isFollowing ? "Following" : "Follow"}
-              </Button>
-=======
               <FollowButton targetUsername={profileUsername} />
->>>>>>> 86d481d (Finalized Project)
               <Button variant="outline" size="icon">
                 <MoreHorizontal className="w-5 h-5" />
               </Button>
@@ -229,11 +193,6 @@ const Profile = () => {
 
           {/* Posts */}
           <div className="space-y-6">
-<<<<<<< HEAD
-            {mockUserPosts.map((post) => (
-              <PostCard key={post.id} {...post} />
-            ))}
-=======
             {activeTab === "Posts" && (
               mockUserPosts.map((post) => (
                 <PostCard key={post.id} {...post} />
@@ -314,7 +273,6 @@ const Profile = () => {
                 No liked posts yet
               </div>
             )}
->>>>>>> 86d481d (Finalized Project)
           </div>
         </div>
       </div>

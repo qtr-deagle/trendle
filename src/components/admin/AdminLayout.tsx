@@ -20,10 +20,7 @@ const adminNavItems = [
   { icon: Users, label: "User", path: "/admin/users" },
   { icon: AlertTriangle, label: "Reports", path: "/admin/reports" },
   { icon: MessageSquare, label: "Messages", path: "/admin/messages" },
-<<<<<<< HEAD
-=======
   { icon: MessageSquare, label: "Message Users", path: "/admin/message-users" },
->>>>>>> 86d481d (Finalized Project)
   {
     icon: FolderOpen,
     label: "Categories management",

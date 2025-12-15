@@ -16,17 +16,6 @@ class AdminRoutes
 
     public static function login()
     {
-<<<<<<< HEAD
-        $data = json_decode(file_get_contents('php://input'), true);
-
-        if (!isset($data['email']) || !isset($data['password'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Email and password are required']);
-            return;
-        }
-
-        try {
-=======
         try {
             $inputData = file_get_contents('php://input');
             error_log('Admin login raw input: ' . $inputData);
@@ -39,7 +28,6 @@ class AdminRoutes
                 return;
             }
 
->>>>>>> 86d481d (Finalized Project)
             $db = Database::getInstance();
 
             // Get admin user
@@ -48,8 +36,6 @@ class AdminRoutes
                 [$data['email']]
             );
 
-<<<<<<< HEAD
-=======
             if (!$stmt) {
                 error_log('Admin login query failed: ' . $db->getConnection()->error);
                 http_response_code(500);
@@ -57,7 +43,6 @@ class AdminRoutes
                 return;
             }
 
->>>>>>> 86d481d (Finalized Project)
             $result = $stmt->get_result();
             if ($result->num_rows === 0) {
                 http_response_code(401);
@@ -87,11 +72,7 @@ class AdminRoutes
                 ]
             ]);
         } catch (\Exception $e) {
-<<<<<<< HEAD
-            error_log('Admin login error: ' . $e->getMessage());
-=======
             error_log('Admin login error: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
->>>>>>> 86d481d (Finalized Project)
             http_response_code(500);
             echo json_encode(['error' => 'Admin login failed: ' . $e->getMessage()]);
         }
@@ -1114,8 +1095,6 @@ class AdminRoutes
         $decoded = Auth::verifyToken($token);
         return $decoded['userId'] ?? null;
     }
-<<<<<<< HEAD
-=======
 
     public static function messageUser()
     {
@@ -1212,5 +1191,4 @@ class AdminRoutes
             echo json_encode(['error' => 'Failed to send message: ' . $e->getMessage()]);
         }
     }
->>>>>>> 86d481d (Finalized Project)
 }

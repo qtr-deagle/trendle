@@ -6,31 +6,16 @@ use App\Config\Database;
 
 class UserPostService
 {
-<<<<<<< HEAD
-
-    /**
-     * Get feed posts for the authenticated user
-     * Shows posts from users they follow, sorted by created_at DESC
-     */
-    public static function getFeedPosts($userId, $limit = 20, $offset = 0)
-=======
     /**
      * Get feed posts (user's own posts + posts with tags)
      */
     public static function getFeedPosts($userId, $limit = 50, $offset = 0)
->>>>>>> 86d481d (Finalized Project)
     {
         try {
             $db = Database::getInstance();
 
-<<<<<<< HEAD
-            // Get posts from followed users and user's own posts
-            $stmt = $db->execute(
-                'SELECT p.id, p.user_id, p.content, p.image_url, p.created_at, p.updated_at,
-=======
             $stmt = $db->execute(
                 'SELECT DISTINCT p.id, p.user_id, p.content, p.image_url, p.created_at, p.updated_at,
->>>>>>> 86d481d (Finalized Project)
                         u.username, u.display_name, u.avatar_url,
                         (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
                         (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count,
@@ -38,21 +23,10 @@ class UserPostService
                         CASE WHEN EXISTS (SELECT 1 FROM likes WHERE post_id = p.id AND user_id = ?) THEN 1 ELSE 0 END as is_liked
                  FROM posts p
                  JOIN users u ON p.user_id = u.id
-<<<<<<< HEAD
-                 WHERE p.user_id IN (
-                     SELECT following_id FROM follows WHERE follower_id = ?
-                     UNION
-                     SELECT ?
-                 )
-                 ORDER BY p.created_at DESC
-                 LIMIT ? OFFSET ?',
-                [$userId, $userId, $userId, $limit, $offset]
-=======
                  WHERE p.user_id = ?
                  ORDER BY p.created_at DESC
                  LIMIT ? OFFSET ?',
                 [$userId, $userId, $limit, $offset]
->>>>>>> 86d481d (Finalized Project)
             );
 
             $result = $stmt->get_result();
@@ -77,8 +51,6 @@ class UserPostService
     }
 
     /**
-<<<<<<< HEAD
-=======
      * Get ALL posts from all users (For you tab)
      */
     public static function getAllPosts($limit = 50, $offset = 0, $userId = null)
@@ -188,7 +160,6 @@ class UserPostService
     }
 
     /**
->>>>>>> 86d481d (Finalized Project)
      * Get all posts from a specific user
      */
     public static function getUserPosts($username, $limit = 20, $offset = 0)
@@ -239,10 +210,6 @@ class UserPostService
         try {
             $db = Database::getInstance();
 
-<<<<<<< HEAD
-            // Get post details
-=======
->>>>>>> 86d481d (Finalized Project)
             $stmt = $db->execute(
                 'SELECT p.id, p.user_id, p.content, p.image_url, p.created_at, p.updated_at,
                         u.username, u.display_name, u.avatar_url, u.bio,
@@ -267,10 +234,6 @@ class UserPostService
             $post = $result->fetch_assoc();
             $post = self::formatPostRow($post, $userId);
 
-<<<<<<< HEAD
-            // Get comments
-=======
->>>>>>> 86d481d (Finalized Project)
             $commentsStmt = $db->execute(
                 'SELECT c.id, c.user_id, c.content, c.created_at,
                         u.username, u.display_name, u.avatar_url,
@@ -300,11 +263,7 @@ class UserPostService
                 ];
             }
 
-<<<<<<< HEAD
-            $post['comments'] = $comments;
-=======
             $post['comments_list'] = $comments;
->>>>>>> 86d481d (Finalized Project)
 
             return [
                 'success' => true,
@@ -322,11 +281,7 @@ class UserPostService
     /**
      * Create a new post
      */
-<<<<<<< HEAD
-    public static function createPost($userId, $content, $imageUrl = null)
-=======
     public static function createPost($userId, $content, $imageUrl = null, $tags = [])
->>>>>>> 86d481d (Finalized Project)
     {
         try {
             if (empty($content)) {
@@ -345,8 +300,6 @@ class UserPostService
 
             $postId = $db->getConnection()->insert_id;
 
-<<<<<<< HEAD
-=======
             // Add tags if provided
             if (!empty($tags) && is_array($tags)) {
                 foreach ($tags as $tagName) {
@@ -380,7 +333,6 @@ class UserPostService
                 }
             }
 
->>>>>>> 86d481d (Finalized Project)
             return [
                 'success' => true,
                 'message' => 'Post created successfully',
@@ -403,10 +355,6 @@ class UserPostService
         try {
             $db = Database::getInstance();
 
-<<<<<<< HEAD
-            // Check if post exists
-=======
->>>>>>> 86d481d (Finalized Project)
             $postStmt = $db->execute('SELECT id FROM posts WHERE id = ?', [$postId]);
             if ($postStmt->get_result()->num_rows === 0) {
                 return [
@@ -415,10 +363,6 @@ class UserPostService
                 ];
             }
 
-<<<<<<< HEAD
-            // Check if already liked
-=======
->>>>>>> 86d481d (Finalized Project)
             $likeStmt = $db->execute(
                 'SELECT id FROM likes WHERE user_id = ? AND post_id = ?',
                 [$userId, $postId]
@@ -430,10 +374,6 @@ class UserPostService
                 ];
             }
 
-<<<<<<< HEAD
-            // Add like
-=======
->>>>>>> 86d481d (Finalized Project)
             $db->execute(
                 'INSERT INTO likes (user_id, post_id) VALUES (?, ?)',
                 [$userId, $postId]
@@ -479,8 +419,6 @@ class UserPostService
     }
 
     /**
-<<<<<<< HEAD
-=======
      * Get posts by tags with matching followers
      */
     public static function getPostsByTagsWithFollowers($userId, $limit = 20, $offset = 0)
@@ -600,27 +538,17 @@ class UserPostService
     }
 
     /**
->>>>>>> 86d481d (Finalized Project)
      * Format a post row into API response format
      */
     private static function formatPostRow($row, $currentUserId = null)
     {
-<<<<<<< HEAD
-        // Convert relative image URLs to absolute
         $imageUrl = $row['image_url'];
         if ($imageUrl && strpos($imageUrl, 'http') !== 0) {
-            // Relative URL - make it absolute (images are served directly, not under /api)
-=======
-        $imageUrl = $row['image_url'];
-        if ($imageUrl && strpos($imageUrl, 'http') !== 0) {
->>>>>>> 86d481d (Finalized Project)
             $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
             $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
             $imageUrl = $protocol . '://' . $host . $imageUrl;
         }
 
-<<<<<<< HEAD
-=======
         // Fetch tags for this post
         $tags = [];
         try {
@@ -640,7 +568,6 @@ class UserPostService
             error_log('Error fetching tags: ' . $e->getMessage());
         }
 
->>>>>>> 86d481d (Finalized Project)
         return [
             'id' => $row['id'],
             'author' => [
@@ -655,12 +582,8 @@ class UserPostService
             'comments' => intval($row['comments_count']),
             'reposts' => intval($row['reposts_count']),
             'isLiked' => isset($row['is_liked']) ? boolval($row['is_liked']) : false,
-<<<<<<< HEAD
-            'createdAt' => $row['created_at']
-=======
             'createdAt' => $row['created_at'],
             'tags' => $tags
->>>>>>> 86d481d (Finalized Project)
         ];
     }
 }

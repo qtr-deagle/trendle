@@ -1,13 +1,10 @@
 <?php
 
-<<<<<<< HEAD
-=======
 // Suppress deprecation warnings to prevent JSON corruption
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
->>>>>>> 86d481d (Finalized Project)
 // Set CORS headers FIRST before anything else
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -113,11 +110,8 @@ try {
         \App\Routes\AdminRoutes::promoteToAdmin();
     } elseif (preg_match('/^\/admin\/users\/(\d+)\/demote$/', $path, $matches) && $method === 'POST') {
         \App\Routes\AdminRoutes::demoteFromAdmin();
-<<<<<<< HEAD
-=======
     } elseif (preg_match('/^\/admin\/message-user\/(\d+)$/', $path, $matches) && $method === 'POST') {
         \App\Routes\AdminRoutes::messageUser();
->>>>>>> 86d481d (Finalized Project)
     }
     // ========== TAGS ==========
     elseif ($path === '/admin/tags' && $method === 'GET') {
@@ -180,13 +174,10 @@ try {
     // ========== POST ROUTES ==========
     elseif ($path === '/posts/feed' && $method === 'GET') {
         \App\Routes\UserRoutes::getFeedPosts();
-<<<<<<< HEAD
-=======
     } elseif ($path === '/posts/all' && $method === 'GET') {
         \App\Routes\UserRoutes::getAllPosts();
     } elseif ($path === '/posts/following' && $method === 'GET') {
         \App\Routes\UserRoutes::getFollowingPosts();
->>>>>>> 86d481d (Finalized Project)
     } elseif (preg_match('#^/user/([a-zA-Z0-9_]+)/posts$#', $path) && $method === 'GET') {
         \App\Routes\UserRoutes::getUserPosts();
     } elseif (preg_match('#^/post/(\d+)$#', $path) && $method === 'GET') {
@@ -199,20 +190,14 @@ try {
         \App\Routes\UserRoutes::likePost();
     } elseif (preg_match('#^/post/(\d+)/unlike$#', $path) && $method === 'POST') {
         \App\Routes\UserRoutes::unlikePost();
-<<<<<<< HEAD
-=======
     } elseif (preg_match('#^/post/(\d+)/comment$#', $path) && $method === 'POST') {
         \App\Routes\UserRoutes::addComment();
->>>>>>> 86d481d (Finalized Project)
     }
     // ========== COMMUNITY ROUTES ==========
     elseif ($path === '/communities' && $method === 'GET') {
         \App\Routes\UserRoutes::getAllCommunities();
-<<<<<<< HEAD
-=======
     } elseif ($path === '/communities' && $method === 'POST') {
         \App\Routes\UserRoutes::createCommunity();
->>>>>>> 86d481d (Finalized Project)
     } elseif ($path === '/communities/user' && $method === 'GET') {
         \App\Routes\UserRoutes::getUserCommunities();
     } elseif (preg_match('#^/community/(\d+)$#', $path) && $method === 'GET') {
@@ -245,11 +230,8 @@ try {
         \App\Routes\UserRoutes::getTrendingHashtags();
     } elseif ($path === '/explore/categories' && $method === 'GET') {
         \App\Routes\UserRoutes::getTrendingCategories();
-<<<<<<< HEAD
-=======
     } elseif ($path === '/interests' && $method === 'GET') {
         \App\Routes\UserRoutes::getInterests();
->>>>>>> 86d481d (Finalized Project)
     } elseif ($path === '/users/search' && $method === 'GET') {
         \App\Routes\UserRoutes::searchUsers();
     } elseif ($path === '/search' && $method === 'GET') {
